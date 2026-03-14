@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ebaAI — AI-ассистент</title>
+<script src="https://telegram.org/js/telegram-widget.js?22" async></script>
+<style>
+:root {
+  --bg: #0f0f0f;
+  --bg2: #1a1a1a;
+  --bg3: #242424;
+  --border: #2e2e2e;
+  --text: #ececec;
+  --text2: #a0a0a0;
+  --accent: #7c6af7;
+  --accent2: #5b4fcf;
+  --user-msg: #1e1e2e;
+  --bot-msg: #1a1a1a;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warn: #f59e0b;
+  --sidebar-w: 260px;
+  --radius: 12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);}
+.logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;color:var(--text);}
+.logo span{font-size:22px;}
+.nav{flex:1;padding:8px;overflow-y:auto;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:14px;transition:.15s;}
+.nav-item:hover,.nav-item.active{background:var(--bg3);color:var(--text);}
+.nav-item .icon{font-size:16px;width:20px;text-align:center;}
+.sidebar-user{padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;}
+.user-info{flex:1;min-width:0;}
+.user-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-tier{font-size:11px;color:var(--text2);}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;}
+
+/* ── TOPBAR ── */
+.topbar{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.topbar-title{font-size:16px;font-weight:600;flex:1;}
+.promo-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap;transition:.15s;}
+.promo-btn:hover{opacity:.9;}
+
+/* ── CHAT ── */
+.chat-area{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:4px;}
+.chat-area::-webkit-scrollbar{width:4px;}
+.chat-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px;opacity:.9;}
+.welcome-icon{font-size:52px;}
+.welcome h2{font-size:26px;font-weight:700;}
+.welcome p{font-size:15px;color:var(--text2);max-width:400px;line-height:1.5;}
+.suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;}
+.suggestion{background:var(--bg3);border:1px solid var(--border);padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;color:var(--text2);transition:.15s;}
+.suggestion:hover{border-color:var(--accent);color:var(--text);}
+
+.msg{display:flex;gap:10px;max-width:780px;width:100%;padding:6px 0;}
+.msg.user{flex-direction:row-reverse;align-self:flex-end;}
+.msg.bot{align-self:flex-start;}
+.msg-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.msg.bot .msg-avatar{background:var(--accent);}
+.msg.user .msg-avatar{background:var(--bg3);}
+.msg-body{max-width:calc(100% - 44px);}
+.msg-bubble{padding:10px 14px;border-radius:var(--radius);font-size:14px;line-height:1.6;word-break:break-word;}
+.msg.bot .msg-bubble{background:var(--bot-msg);border:1px solid var(--border);}
+.msg.user .msg-bubble{background:var(--user-msg);border:1px solid rgba(124,106,247,.3);}
+.msg-time{font-size:11px;color:var(--text2);margin-top:4px;padding:0 4px;}
+.msg.user .msg-time{text-align:right;}
+
+.typing{display:flex;gap:4px;align-items:center;padding:12px 14px;}
+.typing span{width:6px;height:6px;background:var(--text2);border-radius:50%;animation:bounce .9s infinite;}
+.typing span:nth-child(2){animation-delay:.15s;}
+.typing span:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+
+/* ── INPUT ── */
+.input-area{padding:16px 20px;border-top:1px solid var(--border);flex-shrink:0;}
+.input-row{display:flex;align-items:flex-end;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;transition:.15s;}
+.input-row:focus-within{border-color:var(--accent);}
+.msg-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:14px;resize:none;max-height:120px;line-height:1.5;font-family:inherit;}
+.msg-input::placeholder{color:var(--text2);}
+.send-btn{background:var(--accent);border:none;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:.15s;}
+.send-btn:hover{background:var(--accent2);}
+.send-btn:disabled{opacity:.4;cursor:not-allowed;}
+.send-btn svg{width:16px;height:16px;}
+.input-actions{display:flex;gap:8px;margin-top:8px;}
+.input-action{background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:20px;font-size:12px;cursor:pointer;transition:.15s;}
+.input-action:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── PAGES ── */
+.page{display:none;flex:1;overflow-y:auto;padding:28px 32px;}
+.page.active{display:block;}
+.page h1{font-size:22px;font-weight:700;margin-bottom:6px;}
+.page .subtitle{color:var(--text2);font-size:14px;margin-bottom:28px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+.card h3{font-size:14px;font-weight:600;margin-bottom:14px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;}
+.stat{background:var(--bg3);border-radius:8px;padding:14px;text-align:center;}
+.stat-val{font-size:24px;font-weight:700;color:var(--accent);}
+.stat-label{font-size:12px;color:var(--text2);margin-top:4px;}
+
+/* Settings */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
+.setting-row:last-child{border-bottom:none;}
+.setting-info{flex:1;}
+.setting-label{font-size:14px;font-weight:500;}
+.setting-desc{font-size:12px;color:var(--text2);margin-top:2px;}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:12px;cursor:pointer;transition:.2s;}
+.toggle input:checked+.toggle-slider{background:var(--accent);}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
+.toggle input:checked+.toggle-slider:before{transform:translateX(20px);}
+.select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;cursor:pointer;}
+.select:focus{outline:none;border-color:var(--accent);}
+
+/* Personas grid */
+.persona-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
+.persona-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:.15s;text-align:center;}
+.persona-card:hover{border-color:var(--accent);}
+.persona-card.active{border-color:var(--accent);background:rgba(124,106,247,.1);}
+.persona-icon{font-size:24px;margin-bottom:6px;}
+.persona-name{font-size:12px;font-weight:600;}
+
+/* Image gen */
+.image-area{display:flex;flex-direction:column;gap:16px;}
+.image-prompt{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:8px;font-size:14px;resize:vertical;min-height:80px;font-family:inherit;}
+.image-prompt:focus{outline:none;border-color:var(--accent);}
+.service-btns{display:flex;gap:10px;}
+.service-btn{flex:1;padding:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:8px;cursor:pointer;font-size:13px;transition:.15s;}
+.service-btn:hover,.service-btn.active{border-color:var(--accent);background:rgba(124,106,247,.1);}
+.image-result{border-radius:8px;overflow:hidden;max-width:512px;}
+.image-result img{width:100%;display:block;}
+.btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:.15s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+.btn-danger{background:transparent;border:1px solid var(--danger);color:var(--danger);}
+.btn-danger:hover{background:var(--danger);color:#fff;}
+
+/* Admin */
+.admin-table{width:100%;border-collapse:collapse;font-size:13px;}
+.admin-table th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600;}
+.admin-table td{padding:10px 12px;border-bottom:1px solid var(--border);}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-free{background:rgba(160,160,160,.15);color:var(--text2);}
+.badge-standard{background:rgba(245,158,11,.15);color:var(--warn);}
+.badge-pro{background:rgba(124,106,247,.15);color:var(--accent);}
+.badge-group{background:rgba(34,197,94,.15);color:var(--success);}
+
+/* Tiers modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;display:none;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:600px;width:90%;max-height:90vh;overflow-y:auto;}
+.modal h2{font-size:20px;font-weight:700;margin-bottom:20px;text-align:center;}
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;}
+.tier-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
+.tier-card.highlight{border-color:var(--accent);}
+.tier-icon{font-size:28px;margin-bottom:8px;}
+.tier-name{font-size:14px;font-weight:700;margin-bottom:4px;}
+.tier-price{font-size:18px;font-weight:800;color:var(--accent);margin-bottom:10px;}
+.tier-features{text-align:left;font-size:12px;color:var(--text2);line-height:1.8;}
+.tier-features li{list-style:none;padding-left:4px;}
+.tier-features li::before{content:'✓ ';}
+.tier-buy{display:block;margin-top:12px;padding:8px;background:var(--accent);color:#fff;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;text-align:center;}
+
+/* Auth page */
+.auth-page{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;}
+.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:40px;max-width:400px;width:100%;text-align:center;}
+.auth-box h1{font-size:26px;font-weight:800;margin-bottom:8px;}
+.auth-box p{color:var(--text2);font-size:14px;margin-bottom:28px;line-height:1.5;}
+.auth-tabs{display:flex;background:var(--bg3);border-radius:8px;padding:4px;margin-bottom:24px;}
+.auth-tab{flex:1;padding:8px;border-radius:6px;border:none;background:transparent;color:var(--text2);font-size:13px;cursor:pointer;transition:.15s;font-weight:500;}
+.auth-tab.active{background:var(--bg2);color:var(--text);}
+.auth-form{display:flex;flex-direction:column;gap:12px;}
+.auth-input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-size:14px;width:100%;}
+.auth-input:focus{outline:none;border-color:var(--accent);}
+.auth-hint{font-size:12px;color:var(--text2);text-align:left;}
+.auth-divider{display:flex;align-items:center;gap:10px;color:var(--text2);font-size:13px;margin:4px 0;}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.tg-widget-wrap{display:flex;justify-content:center;}
+.error-msg{color:var(--danger);font-size:13px;text-align:left;}
+.success-msg{color:var(--success);font-size:13px;text-align:left;}
+
+/* Mobile */
+@media(max-width:700px){
+  .sidebar{display:none;}
+  .page{padding:16px;}
+  .tiers{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH PAGE -->
+<div class="auth-page" id="authPage">
+  <div class="auth-box">
+    <div style="font-size:48px;margin-bottom:12px;">🤖</div>
+    <h1>ebaAI</h1>
+    <p>AI-ассистент нового поколения.<br>Войди чтобы начать общение.</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('widget')">Telegram</button>
+      <button class="auth-tab" onclick="switchAuthTab('code')">Код</button>
+    </div>
+
+    <!-- Widget tab -->
+    <div id="tabWidget">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Нажми кнопку — Telegram попросит подтверждение</p>
+      <div class="tg-widget-wrap">
+        <script async src="https://telegram.org/js/telegram-widget.js?22"
+          data-telegram-login="ebaAI_offc_bot"
+          data-size="large"
+          data-onauth="onTelegramAuth(user)"
+          data-request-access="write"
+          data-userpic="false"></script>
+      </div>
+    </div>
+
+    <!-- Code tab -->
+    <div id="tabCode" style="display:none;">
+      <div class="auth-form" id="formUsername">
+        <input class="auth-input" id="authUsername" placeholder="@username в Telegram" autocomplete="off">
+        <div id="authError" class="error-msg" style="display:none;"></div>
+        <button class="btn btn-primary" onclick="requestCode()" style="width:100%;">Получить код</button>
+        <p class="auth-hint">Бот пришлёт 6-значный код в Telegram</p>
+      </div>
+      <div class="auth-form" id="formCode" style="display:none;">
+        <p style="font-size:13px;color:var(--text2);">Код отправлен. Введи его ниже:</p>
+        <input class="auth-input" id="authCode" placeholder="000000" maxlength="6" style="text-align:center;font-size:22px;letter-spacing:8px;">
+        <div id="codeError" class="error-msg" style="display:none;"></div>
+        <button class="btn btn-primary" onclick="verifyCode()" style="width:100%;">Войти</button>
+        <button onclick="showUsernameForm()" style="background:transparent;border:none;color:var(--text2);font-size:13px;cursor:pointer;margin-top:4px;">← Изменить username</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;flex:1;display:none;">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo"><span>🤖</span> ebaAI</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" onclick="showPage('chat')" id="nav-chat"><span class="icon">💬</span> Чат</div>
+      <div class="nav-item" onclick="showPage('image')" id="nav-image"><span class="icon">🎨</span> Картинки</div>
+      <div class="nav-item" onclick="showPage('history')" id="nav-history"><span class="icon">🕐</span> История</div>
+      <div class="nav-item" onclick="showPage('profile')" id="nav-profile"><span class="icon">👤</span> Профиль</div>
+      <div class="nav-item" onclick="showPage('settings')" id="nav-settings"><span class="icon">⚙️</span> Настройки</div>
+      <div class="nav-item" onclick="showPage('subscribe')" id="nav-subscribe"><span class="icon">⭐</span> Подписка</div>
+      <div class="nav-item admin-only" onclick="showPage('admin')" id="nav-admin" style="display:none;"><span class="icon">🛠</span> Админ</div>
+    </nav>
+    <div class="sidebar-user">
+      <div class="avatar" id="sidebarAvatar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebarName">Загрузка...</div>
+        <div class="user-tier" id="sidebarTier"></div>
+      </div>
+      <button onclick="logout()" title="Выйти" style="background:transparent;border:none;color:var(--text2);cursor:pointer;font-size:16px;">↩</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-title" id="topbarTitle">Чат</div>
+      <button class="promo-btn" onclick="openModal('tiersModal')" id="promoBanner" style="display:none;">✨ Upgrade до Pro</button>
+    </div>
+
+    <!-- CHAT PAGE -->
+    <div class="page active" id="page-chat" style="display:flex;flex-direction:column;padding:0;overflow:hidden;">
+      <div class="chat-area" id="chatArea">
+        <div class="welcome" id="welcomeScreen">
+          <div class="welcome-icon">🤖</div>
+          <h2>Привет, я ebaAI</h2>
+          <p id="welcomeQuote">С чего начнём?</p>
+          <div class="suggestions">
+            <div class="suggestion" onclick="sendSuggestion('Расскажи анекдот')">😂 Расскажи анекдот</div>
+            <div class="suggestion" onclick="sendSuggestion('Напиши стихотворение')">✍️ Напиши стихотворение</div>
+            <div class="suggestion" onclick="sendSuggestion('Какая сейчас погода в Москве?')">🌤 Погода в Москве</div>
+            <div class="suggestion" onclick="sendSuggestion('Объясни что такое квантовая физика')">🔬 Квантовая физика</div>
+          </div>
+        </div>
+      </div>
+      <div class="input-area">
+        <div class="input-row">
+          <textarea class="msg-input" id="msgInput" placeholder="Напиши что-нибудь..." rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+        <div class="input-actions">
+          <button class="input-action" onclick="clearChat()">🗑 Очистить</button>
+          <button class="input-action" onclick="showPage('image')">🎨 Картинка</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- IMAGE PAGE -->
+    <div class="page" id="page-image">
+      <h1>🎨 Генерация картинок</h1>
+      <p class="subtitle">Опиши что хочешь нарисовать</p>
+      <div class="image-area">
+        <textarea class="image-prompt" id="imagePrompt" placeholder="Например: закат над горами в стиле аниме..."></textarea>
+        <div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">Выбери движок:</div>
+          <div class="service-btns">
+            <button class="service-btn active" id="btn-cf" onclick="selectService('cf')">🤖 Cloudflare AI<br><span style="font-size:11px;color:var(--text2);">Реализм</span></button>
+            <button class="service-btn" id="btn-raphael" onclick="selectService('raphael')">🎨 Raphael<br><span style="font-size:11px;color:var(--text2);">Художественный</span></button>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="genBtn" onclick="generateImage()">✨ Сгенерировать</button>
+        <div id="imageResult" style="display:none;" class="image-result"></div>
+      </div>
+    </div>
+
+    <!-- HISTORY PAGE -->
+    <div class="page" id="page-history">
+      <h1>🕐 История чата</h1>
+      <p class="subtitle">Твои последние сообщения с ebaAI</p>
+      <div id="historyList"></div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div class="page" id="page-profile">
+      <h1>👤 Профиль</h1>
+      <p class="subtitle">Статистика и информация</p>
+      <div class="card">
+        <h3>Статистика</h3>
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-val" id="statMsgs">—</div><div class="stat-label">Сообщений</div></div>
+          <div class="stat"><div class="stat-val" id="statImgs">—</div><div class="stat-label">Картинок</div></div>
+          <div class="stat"><div class="stat-val" id="statRefs">—</div><div class="stat-label">Рефералов</div></div>
+          <div class="stat"><div class="stat-val" id="statStars">—</div><div class="stat-label">⭐ звёзд</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Подписка</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div id="profileTierLabel" style="font-size:18px;font-weight:700;"></div>
+            <div id="profileTierUntil" style="font-size:13px;color:var(--text2);margin-top:4px;"></div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('tiersModal')">Улучшить</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Реферальная программа</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Приглашай друзей и получай бонусы. Каждые 3 друга = Pro на 5 дней.</p>
+        <div style="display:flex;gap:8px;">
+          <input id="refLink" class="auth-input" style="flex:1;" readonly>
+          <button class="btn btn-primary" onclick="copyRef()">Копировать</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <h1>⚙️ Настройки</h1>
+      <p class="subtitle">Персонализация бота</p>
+      <div class="card">
+        <h3>Поведение</h3>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">🤬 Маты в ответах</div>
+            <div class="setting-desc">Бот будет материться для выразительности</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="toggleSwear" onchange="saveSetting('swear',this.checked?1:0)"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">🔔 Еженедельная статистика</div>
+            <div class="setting-desc">Бот присылает статистику каждое воскресенье</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="toggleNotif" onchange="saveSetting('weekly_notif',this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">📏 Длина ответов</div>
+            <div class="setting-desc">Насколько подробно отвечает бот</div>
+          </div>
+          <select class="select" id="selectLen" onchange="saveSetting('answer_length',this.value)">
+            <option value="short">Короткие</option>
+            <option value="normal" selected>Обычные</option>
+            <option value="long">Подробные</option>
+          </select>
+        </div>
+      </div>
+      <div class="card" id="personaCard">
+        <h3>🎭 Личность бота <span style="font-size:11px;color:var(--accent);">Pro</span></h3>
+        <div class="persona-grid" id="personaGrid"></div>
+      </div>
+    </div>
+
+    <!-- SUBSCRIBE PAGE -->
+    <div class="page" id="page-subscribe">
+      <h1>⭐ Подписка</h1>
+      <p class="subtitle">Оплата только через Telegram Stars</p>
+      <div class="tiers" style="margin-top:8px;">
+        <div class="tier-card">
+          <div class="tier-icon">🆓</div>
+          <div class="tier-name">Free</div>
+          <div class="tier-price">0 ⭐</div>
+          <ul class="tier-features">
+            <li>80 сообщений / 3ч</li><li>5 картинок / день</li><li>Поиск, погода, новости</li><li>15 игр</li>
+          </ul>
+        </div>
+        <div class="tier-card highlight">
+          <div class="tier-icon">⭐</div>
+          <div class="tier-name">Standard</div>
+          <div class="tier-price">29 ⭐</div>
+          <ul class="tier-features">
+            <li>160 сообщений / 3ч</li><li>15 картинок / день</li><li>Перевод, QR, цвет</li><li>Секретные сообщения</li>
+          </ul>
+          <a href="https://t.me/ebaAI_offc_bot?start=buy_standard" target="_blank" class="tier-buy">Купить в Telegram</a>
+        </div>
+        <div class="tier-card">
+          <div class="tier-icon">💎</div>
+          <div class="tier-name">Pro</div>
+          <div class="tier-price">59 ⭐</div>
+          <ul class="tier-features">
+            <li>Безлимит сообщений</li><li>HD картинки</li><li>14 личностей бота</li><li>✨ значок Pro</li>
+          </ul>
+          <a href="https://t.me/ebaAI_offc_bot?start=buy_pro" target="_blank" class="tier-buy">Купить в Telegram</a>
+        </div>
+        <div class="tier-card">
+          <div class="tier-icon">👑</div>
+          <div class="tier-name">Group+</div>
+          <div class="tier-price">49 ⭐</div>
+          <ul class="tier-features">
+            <li>Модерация групп</li><li>Антиспам / антифлуд</li><li>Таблица лидеров</li><li>Достижения</li>
+          </ul>
+          <a href="https://t.me/ebaAI_offc_bot?start=buy_group" target="_blank" class="tier-buy">Купить в Telegram</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN PAGE -->
+    <div class="page" id="page-admin">
+      <h1>🛠 Админ-панель</h1>
+      <p class="subtitle">Управление ebaAI</p>
+      <div class="card">
+        <h3>Статистика</h3>
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-val" id="adminUsers">—</div><div class="stat-label">Пользователей</div></div>
+          <div class="stat"><div class="stat-val" id="adminToday">—</div><div class="stat-label">Новых сегодня</div></div>
+          <div class="stat"><div class="stat-val" id="adminMsgs">—</div><div class="stat-label">Сообщений</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>По тарифам</h3>
+        <div id="adminTiers"></div>
+      </div>
+      <div class="card">
+        <h3>Рассылка</h3>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <textarea id="broadcastText" class="image-prompt" placeholder="Текст рассылки..."></textarea>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input type="datetime-local" id="broadcastTime" class="auth-input" style="flex:1;">
+            <button class="btn btn-primary" onclick="sendBroadcast()">📢 Отправить</button>
+          </div>
+          <p style="font-size:12px;color:var(--text2);">Оставь дату пустой для немедленной отправки</p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Ошибки</h3>
+        <div id="adminErrors" style="font-size:13px;"></div>
+        <button class="btn btn-danger" onclick="loadAdminErrors()" style="margin-top:12px;">Обновить</button>
+      </div>
+      <div class="card">
+        <h3>Пользователи</h3>
+        <input class="auth-input" id="userSearch" placeholder="Поиск по имени или username..." style="margin-bottom:12px;" oninput="filterUsers()">
+        <div style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead><tr><th>Имя</th><th>Username</th><th>Тариф</th><th>Регистрация</th></tr></thead>
+            <tbody id="usersTable"></tbody>
+          </table>
+        </div>
+        <div id="usersPagination" style="display:flex;gap:8px;margin-top:12px;"></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- TIERS MODAL -->
+<div class="modal-overlay" id="tiersModal" onclick="closeModalOutside(event,'tiersModal')">
+  <div class="modal">
+    <h2>⭐ Тарифы ebaAI</h2>
+    <div class="tiers">
+      <div class="tier-card">
+        <div class="tier-icon">🆓</div><div class="tier-name">Free</div><div class="tier-price">0 ⭐</div>
+        <ul class="tier-features"><li>80 сообщений/3ч</li><li>5 картинок/день</li><li>Поиск и погода</li></ul>
+      </div>
+      <div class="tier-card highlight">
+        <div class="tier-icon">⭐</div><div class="tier-name">Standard</div><div class="tier-price">29 ⭐/мес</div>
+        <ul class="tier-features"><li>160 сообщений/3ч</li><li>15 картинок/день</li><li>Перевод и QR</li></ul>
+        <a href="https://t.me/ebaAI_offc_bot?start=buy_standard" target="_blank" class="tier-buy">Купить</a>
+      </div>
+      <div class="tier-card">
+        <div class="tier-icon">💎</div><div class="tier-name">Pro</div><div class="tier-price">59 ⭐/мес</div>
+        <ul class="tier-features"><li>Безлимит</li><li>HD картинки</li><li>14 личностей</li></ul>
+        <a href="https://t.me/ebaAI_offc_bot?start=buy_pro" target="_blank" class="tier-buy">Купить</a>
+      </div>
+    </div>
+    <button onclick="closeModal('tiersModal')" style="width:100%;margin-top:16px;padding:10px;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;cursor:pointer;">Закрыть</button>
+  </div>
+</div>
+
+<script>
+const API = 'https://restless-resonance-59cf.evgen20111110.workers.dev';
+const ADMIN_ID = 6168325401;
+const QUOTES = [
+  'С чего начнём?',
+  'Чем могу помочь?',
+  'Задай любой вопрос.',
+  'Привет! Что на уме?',
+  'Готов к работе. 🚀',
+  'Я слушаю тебя.',
+];
+const PERSONAS = {
+  neutral:'🙂 Нейтральный', nyashka:'🧸 Няшка', villain:'😈 Злодей',
+  robot:'🤖 Робот', sage:'🧙 Мудрец', friend:'🤝 Друг',
+  bestie:'💛 Лучший друг', love:'💕 Любовь', psycho:'🧠 Психолог',
+  nerd:'🤓 Ботаник', bully:'😤 Задира',
+};
+const TIER_LABELS = {free:'🆓 Free',standard:'⭐ Standard',pro:'💎 Pro',group:'👑 Group+'};
+
+let token = localStorage.getItem('eba_token');
+let profile = null;
+let chatHistory = [];
+let imageService = 'cf';
+let authUsername = '';
+let adminUsersData = [];
+let adminUsersPage = 0;
+
+// ── INIT ──
+window.onload = async () => {
+  document.getElementById('welcomeQuote').textContent = QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  if(token) await initApp();
+  else showAuth();
+};
+
+function showAuth() {
+  document.getElementById('authPage').style.display='flex';
+  document.getElementById('app').style.display='none';
+}
+
+async function initApp() {
+  document.getElementById('authPage').style.display='none';
+  document.getElementById('app').style.display='flex';
+  await loadProfile();
+  buildPersonaGrid();
+}
+
+// ── AUTH ──
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='widget'?0:1)));
+  document.getElementById('tabWidget').style.display=tab==='widget'?'block':'none';
+  document.getElementById('tabCode').style.display=tab==='code'?'block':'none';
+}
+
+async function onTelegramAuth(user) {
+  try {
+    const r=await fetch(`${API}/api/auth/widget`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(user)});
+    const d=await r.json();
+    if(d.token){token=d.token;localStorage.setItem('eba_token',token);await initApp();}
+    else alert('Ошибка: '+( d.error||'неизвестная ошибка'));
+  } catch(e){alert('Ошибка подключения');}
+}
+
+async function requestCode() {
+  const un=document.getElementById('authUsername').value.trim();
+  if(!un){showAuthError('authError','Введи username');return;}
+  authUsername=un;
+  const btn=event.target; btn.disabled=true; btn.textContent='Отправляю...';
+  try {
+    const r=await fetch(`${API}/api/auth/code`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:un})});
+    const d=await r.json();
+    if(d.ok){
+      document.getElementById('formUsername').style.display='none';
+      document.getElementById('formCode').style.display='flex';
+      setTimeout(()=>document.getElementById('authCode').focus(),100);
+    } else {
+      showAuthError('authError',d.error||'Ошибка');
+      btn.disabled=false; btn.textContent='Получить код';
+    }
+  } catch(e){showAuthError('authError','Ошибка подключения');btn.disabled=false;btn.textContent='Получить код';}
+}
+
+async function verifyCode() {
+  const code=document.getElementById('authCode').value.trim();
+  if(code.length!==6){showAuthError('codeError','Код — 6 цифр');return;}
+  const btn=event.target; btn.disabled=true; btn.textContent='Проверяю...';
+  try {
+    const r=await fetch(`${API}/api/auth/verify`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:authUsername,code})});
+    const d=await r.json();
+    if(d.token){token=d.token;localStorage.setItem('eba_token',token);await initApp();}
+    else {showAuthError('codeError',d.error||'Неверный код');btn.disabled=false;btn.textContent='Войти';}
+  } catch(e){showAuthError('codeError','Ошибка подключения');btn.disabled=false;btn.textContent='Войти';}
+}
+
+function showUsernameForm(){
+  document.getElementById('formCode').style.display='none';
+  document.getElementById('formUsername').style.display='flex';
+}
+
+function showAuthError(id,msg){
+  const el=document.getElementById(id);
+  el.textContent=msg; el.style.display='block';
+  setTimeout(()=>el.style.display='none',4000);
+}
+
+function logout(){
+  localStorage.removeItem('eba_token');
+  token=null; profile=null; chatHistory=[];
+  showAuth();
+}
+
+// ── PROFILE ──
+async function loadProfile() {
+  try {
+    const r=await apiGet('profile');
+    profile=r;
+    const name=r.first_name||'User';
+    document.getElementById('sidebarName').textContent=name;
+    document.getElementById('sidebarTier').textContent=TIER_LABELS[r.tier]||r.tier;
+    document.getElementById('sidebarAvatar').textContent=name[0].toUpperCase();
+    document.getElementById('statMsgs').textContent=r.msg_count;
+    document.getElementById('statImgs').textContent=r.img_count;
+    document.getElementById('statRefs').textContent=r.ref_count;
+    document.getElementById('statStars').textContent=r.ref_stars;
+    document.getElementById('profileTierLabel').textContent=TIER_LABELS[r.tier]||r.tier;
+    document.getElementById('profileTierUntil').textContent=r.tier_until?`До ${r.tier_until.slice(0,10)}`:'Бесплатный тариф';
+    document.getElementById('refLink').value=`https://t.me/ebaAI_offc_bot?start=ref_${r.user_id}`;
+    if(r.tier==='free') document.getElementById('promoBanner').style.display='block';
+    if(r.user_id===ADMIN_ID) document.querySelector('.admin-only').style.display='flex';
+    loadSettings(r);
+  } catch(e){if(e.status===401){logout();}}
+}
+
+function loadSettings(r) {
+  document.getElementById('toggleSwear').checked=r.swear===1;
+  document.getElementById('selectLen').value=r.answer_length||'normal';
+  const notifEl=document.getElementById('toggleNotif');
+  if(notifEl) notifEl.checked=r.weekly_notif!==false;
+  document.querySelectorAll('.persona-card').forEach(c=>{
+    c.classList.toggle('active',c.dataset.persona===r.persona);
+  });
+  if(r.tier!=='pro'&&r.user_id!==ADMIN_ID) document.getElementById('personaCard').style.opacity='.5';
+}
+
+async function saveSetting(key,val) {
+  try {await apiPost('settings',{[key]:val});} catch(e){}
+}
+
+// ── PAGES ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const page=document.getElementById(`page-${name}`);
+  if(page) page.classList.add('active');
+  const nav=document.getElementById(`nav-${name}`);
+  if(nav) nav.classList.add('active');
+  document.getElementById('topbarTitle').textContent={
+    chat:'Чат',image:'Картинки',history:'История',
+    profile:'Профиль',settings:'Настройки',subscribe:'Подписка',admin:'Админ'
+  }[name]||name;
+  if(name==='history') loadHistory();
+  if(name==='admin') loadAdminStats();
+}
+
+// ── CHAT ──
+function handleKey(e) {
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}
+}
+function autoResize(el) {
+  el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px';
+}
+function sendSuggestion(text) {
+  document.getElementById('msgInput').value=text;
+  sendMessage();
+}
+
+async function sendMessage() {
+  const input=document.getElementById('msgInput');
+  const text=input.value.trim();
+  if(!text) return;
+  input.value=''; input.style.height='auto';
+  document.getElementById('sendBtn').disabled=true;
+  document.getElementById('welcomeScreen')?.remove();
+
+  appendMsg('user',text);
+  const typing=appendTyping();
+
+  try {
+    const r=await apiPost('chat',{text});
+    typing.remove();
+    appendMsg('bot',r.reply||'⚠️ Пустой ответ');
+  } catch(e) {
+    typing.remove();
+    appendMsg('bot','⚠️ Ошибка: '+(e.message||'нет ответа'));
+  }
+  document.getElementById('sendBtn').disabled=false;
+  input.focus();
+}
+
+function appendMsg(role,text) {
+  const area=document.getElementById('chatArea');
+  const div=document.createElement('div');
+  div.className=`msg ${role}`;
+  const time=new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+  div.innerHTML=`
+    <div class="msg-avatar">${role==='bot'?'🤖':'👤'}</div>
+    <div class="msg-body">
+      <div class="msg-bubble">${escapeHtml(text).replace(/\n/g,'<br>')}</div>
+      <div class="msg-time">${time}</div>
+    </div>`;
+  area.appendChild(div);
+  area.scrollTop=area.scrollHeight;
+  return div;
+}
+
+function appendTyping() {
+  const area=document.getElementById('chatArea');
+  const div=document.createElement('div');
+  div.className='msg bot';
+  div.innerHTML=`<div class="msg-avatar">🤖</div><div class="msg-body"><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
+  area.appendChild(div);
+  area.scrollTop=area.scrollHeight;
+  return div;
+}
+
+function clearChat() {
+  const area=document.getElementById('chatArea');
+  area.innerHTML=`<div class="welcome" id="welcomeScreen">
+    <div class="welcome-icon">🤖</div><h2>Привет, я ebaAI</h2>
+    <p>${QUOTES[Math.floor(Math.random()*QUOTES.length)]}</p>
+    <div class="suggestions">
+      <div class="suggestion" onclick="sendSuggestion('Расскажи анекдот')">😂 Расскажи анекдот</div>
+      <div class="suggestion" onclick="sendSuggestion('Напиши стихотворение')">✍️ Напиши стихотворение</div>
+      <div class="suggestion" onclick="sendSuggestion('Какая погода в Москве?')">🌤 Погода в Москве</div>
+    </div></div>`;
+  chatHistory=[];
+}
+
+// ── HISTORY ──
+async function loadHistory() {
+  const list=document.getElementById('historyList');
+  list.innerHTML='<p style="color:var(--text2);font-size:14px;">Загружаю...</p>';
+  try {
+    const r=await apiGet('history');
+    if(!r.messages?.length){list.innerHTML='<p style="color:var(--text2);font-size:14px;">История пуста</p>';return;}
+    list.innerHTML=r.messages.map(m=>`
+      <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-start;">
+        <div style="font-size:18px;flex-shrink:0;">${m.role==='user'?'👤':'🤖'}</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex:1;font-size:13px;line-height:1.5;">
+          ${escapeHtml(m.content||'').replace(/\n/g,'<br>')}
+        </div>
+      </div>`).join('');
+  } catch(e){list.innerHTML='<p style="color:var(--danger);font-size:14px;">Ошибка загрузки</p>';}
+}
+
+// ── IMAGE ──
+function selectService(s) {
+  imageService=s;
+  document.getElementById('btn-cf').classList.toggle('active',s==='cf');
+  document.getElementById('btn-raphael').classList.toggle('active',s==='raphael');
+}
+
+async function generateImage() {
+  const prompt=document.getElementById('imagePrompt').value.trim();
+  if(!prompt) return;
+  const btn=document.getElementById('genBtn');
+  btn.disabled=true; btn.textContent='⏳ Генерирую...';
+  document.getElementById('imageResult').style.display='none';
+  try {
+    const r=await apiPost('image',{prompt,service:imageService});
+    if(r.image) {
+      const res=document.getElementById('imageResult');
+      res.innerHTML=`<img src="data:image/jpeg;base64,${r.image}" alt="${escapeHtml(prompt)}">
+        <div style="padding:10px;background:var(--bg3);font-size:13px;color:var(--text2);">🎨 ${escapeHtml(prompt)}</div>`;
+      res.style.display='block';
+    }
+  } catch(e){alert('Ошибка генерации: '+(e.message||''));}
+  btn.disabled=false; btn.textContent='✨ Сгенерировать';
+}
+
+// ── SETTINGS ──
+function buildPersonaGrid() {
+  const grid=document.getElementById('personaGrid');
+  grid.innerHTML=Object.entries(PERSONAS).map(([k,v])=>{
+    const icon=v.split(' ')[0]; const name=v.split(' ').slice(1).join(' ');
+    return `<div class="persona-card" data-persona="${k}" onclick="selectPersona('${k}')">
+      <div class="persona-icon">${icon}</div>
+      <div class="persona-name">${name}</div>
+    </div>`;
+  }).join('');
+}
+
+async function selectPersona(key) {
+  if(profile?.tier!=='pro'&&profile?.user_id!==ADMIN_ID){openModal('tiersModal');return;}
+  await saveSetting('persona',key);
+  document.querySelectorAll('.persona-card').forEach(c=>c.classList.toggle('active',c.dataset.persona===key));
+}
+
+// ── ADMIN ──
+async function loadAdminStats() {
+  try {
+    const [stats,errs,users]=await Promise.all([apiGet('admin/stats'),apiGet('admin/errors'),apiGet('admin/users')]);
+    document.getElementById('adminUsers').textContent=stats.total_users;
+    document.getElementById('adminToday').textContent=stats.new_today;
+    document.getElementById('adminMsgs').textContent=stats.total_msgs||0;
+    document.getElementById('adminTiers').innerHTML=stats.subs.map(s=>`
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
+        <span>${TIER_LABELS[s.tier]||s.tier}</span><strong>${s.c}</strong>
+      </div>`).join('');
+    if(errs.errors?.length){
+      document.getElementById('adminErrors').innerHTML=errs.errors.slice(0,10).map(e=>`
+        <div style="padding:8px;background:rgba(239,68,68,.08);border-radius:6px;margin-bottom:6px;">
+          <div style="font-size:11px;color:var(--text2);">${e.ts?.slice(0,16)} • ${e.context}</div>
+          <div>${escapeHtml(e.message||'').slice(0,200)}</div>
+        </div>`).join('');
+    } else document.getElementById('adminErrors').innerHTML='<p style="color:var(--success);font-size:13px;">✅ Ошибок нет</p>';
+    adminUsersData=users.users||[];
+    renderUsersTable();
+  } catch(e){}
+}
+
+async function loadAdminErrors(){
+  try{const r=await apiGet('admin/errors');
+    document.getElementById('adminErrors').innerHTML=r.errors.map(e=>`
+      <div style="padding:8px;background:rgba(239,68,68,.08);border-radius:6px;margin-bottom:6px;">
+        <div style="font-size:11px;color:var(--text2);">${e.ts?.slice(0,16)} • ${e.context}</div>
+        <div>${escapeHtml(e.message||'').slice(0,200)}</div>
+      </div>`).join('')||'✅ Ошибок нет';
+  }catch(e){}
+}
+
+function filterUsers(){
+  const q=document.getElementById('userSearch').value.toLowerCase();
+  renderUsersTable(q);
+}
+
+function renderUsersTable(filter=''){
+  const data=filter?adminUsersData.filter(u=>(u.first_name||'').toLowerCase().includes(filter)||(u.username||'').toLowerCase().includes(filter)):adminUsersData;
+  const tbody=document.getElementById('usersTable');
+  tbody.innerHTML=data.slice(0,50).map(u=>`
+    <tr>
+      <td>${escapeHtml(u.first_name||'?')}</td>
+      <td style="color:var(--text2);">${u.username?'@'+u.username:u.user_id}</td>
+      <td><span class="badge badge-${u.tier}">${TIER_LABELS[u.tier]||u.tier}</span></td>
+      <td style="color:var(--text2);">${u.created_at?.slice(0,10)||'?'}</td>
+    </tr>`).join('');
+}
+
+async function sendBroadcast(){
+  const text=document.getElementById('broadcastText').value.trim();
+  const time=document.getElementById('broadcastTime').value;
+  if(!text) return alert('Введи текст');
+  const body={text};
+  if(time) body.fire_at=new Date(time).toISOString();
+  try {
+    const r=await apiPost('admin/broadcast',body);
+    alert(r.scheduled?`✅ Запланировано на ${time}`:`✅ Отправлено ${r.sent} пользователям`);
+    document.getElementById('broadcastText').value='';
+  } catch(e){alert('Ошибка: '+e.message);}
+}
+
+// ── MODAL ──
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function closeModalOutside(e,id){if(e.target.id===id)closeModal(id);}
+
+// ── HELPERS ──
+function copyRef(){
+  navigator.clipboard.writeText(document.getElementById('refLink').value);
+  alert('✅ Скопировано!');
+}
+function escapeHtml(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+async function apiGet(path){
+  const r=await fetch(`${API}/api/${path}`,{headers:{'Authorization':`Bearer ${token}`}});
+  if(r.status===401){logout();throw Object.assign(new Error('Unauthorized'),{status:401});}
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.error||r.statusText);
+  return d;
+}
+async function apiPost(path,body){
+  const r=await fetch(`${API}/api/${path}`,{method:'POST',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.status===401){logout();throw Object.assign(new Error('Unauthorized'),{status:401});}
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.error||r.statusText);
+  return d;
+}
+</script>
+</body>
+</html>
