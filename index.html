@@ -3,909 +3,940 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ebaAI — AI-ассистент</title>
-<script src="https://telegram.org/js/telegram-widget.js?22" async></script>
+<title>ebaAI</title>
+<script src="https://twemoji.maxcdn.com/v/latest/twemoji.min.js" crossorigin="anonymous"></script>
 <style>
-:root {
-  --bg: #0f0f0f;
-  --bg2: #1a1a1a;
-  --bg3: #242424;
-  --border: #2e2e2e;
-  --text: #ececec;
-  --text2: #a0a0a0;
-  --accent: #7c6af7;
-  --accent2: #5b4fcf;
-  --user-msg: #1e1e2e;
-  --bot-msg: #1a1a1a;
-  --danger: #ef4444;
-  --success: #22c55e;
-  --warn: #f59e0b;
-  --sidebar-w: 260px;
-  --radius: 12px;
+:root{
+  --bg:#0d0d0d;--bg2:#161616;--bg3:#1f1f1f;--bg4:#262626;
+  --border:#2a2a2a;--text:#f0f0f0;--text2:#888;--text3:#555;
+  --accent:#7c6af7;--accent2:#5b4fcf;--accent-glow:rgba(124,106,247,.15);
+  --user:#1a1a2e;--danger:#ef4444;--success:#22c55e;--warn:#f59e0b;
+  --r:14px;--sidebar:260px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;}
+img.emoji{height:1.1em;width:1.1em;vertical-align:-.15em;}
 
-/* ── SIDEBAR ── */
-.sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
-.sidebar-header{padding:16px;border-bottom:1px solid var(--border);}
-.logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;color:var(--text);}
-.logo span{font-size:22px;}
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:.3s;}
+.sb-logo{padding:18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.sb-logo .icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.sb-logo span{font-size:17px;font-weight:700;}
+.sb-logo small{font-size:11px;color:var(--text2);display:block;margin-top:1px;}
 .nav{flex:1;padding:8px;overflow-y:auto;}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:14px;transition:.15s;}
-.nav-item:hover,.nav-item.active{background:var(--bg3);color:var(--text);}
-.nav-item .icon{font-size:16px;width:20px;text-align:center;}
-.sidebar-user{padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;}
+.nav-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:12px 8px 6px;}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;cursor:pointer;color:var(--text2);font-size:13.5px;transition:.15s;user-select:none;}
+.ni:hover{background:var(--bg3);color:var(--text);}
+.ni.active{background:var(--accent-glow);color:var(--accent);}
+.ni .e{width:18px;text-align:center;font-size:15px;}
+.sb-user{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;color:#fff;}
 .user-info{flex:1;min-width:0;}
 .user-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .user-tier{font-size:11px;color:var(--text2);}
+.logout-btn{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px;border-radius:6px;transition:.15s;}
+.logout-btn:hover{color:var(--text);background:var(--bg3);}
 
-/* ── MAIN ── */
-.main{flex:1;display:flex;flex-direction:column;min-width:0;}
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
 
-/* ── TOPBAR ── */
-.topbar{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;}
-.topbar-title{font-size:16px;font-weight:600;flex:1;}
-.promo-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap;transition:.15s;}
-.promo-btn:hover{opacity:.9;}
+/* TOPBAR */
+.topbar{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;background:var(--bg2);}
+.topbar-title{font-size:15px;font-weight:600;flex:1;}
+.pro-btn{background:linear-gradient(135deg,#7c6af7,#a855f7);color:#fff;border:none;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;transition:.15s;}
+.pro-btn:hover{opacity:.85;transform:scale(1.02);}
 
-/* ── CHAT ── */
-.chat-area{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:4px;}
-.chat-area::-webkit-scrollbar{width:4px;}
-.chat-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-
-.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px;opacity:.9;}
-.welcome-icon{font-size:52px;}
-.welcome h2{font-size:26px;font-weight:700;}
-.welcome p{font-size:15px;color:var(--text2);max-width:400px;line-height:1.5;}
-.suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;}
-.suggestion{background:var(--bg3);border:1px solid var(--border);padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;color:var(--text2);transition:.15s;}
-.suggestion:hover{border-color:var(--accent);color:var(--text);}
-
-.msg{display:flex;gap:10px;max-width:780px;width:100%;padding:6px 0;}
-.msg.user{flex-direction:row-reverse;align-self:flex-end;}
-.msg.bot{align-self:flex-start;}
-.msg-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;}
-.msg.bot .msg-avatar{background:var(--accent);}
-.msg.user .msg-avatar{background:var(--bg3);}
-.msg-body{max-width:calc(100% - 44px);}
-.msg-bubble{padding:10px 14px;border-radius:var(--radius);font-size:14px;line-height:1.6;word-break:break-word;}
-.msg.bot .msg-bubble{background:var(--bot-msg);border:1px solid var(--border);}
-.msg.user .msg-bubble{background:var(--user-msg);border:1px solid rgba(124,106,247,.3);}
-.msg-time{font-size:11px;color:var(--text2);margin-top:4px;padding:0 4px;}
-.msg.user .msg-time{text-align:right;}
-
-.typing{display:flex;gap:4px;align-items:center;padding:12px 14px;}
-.typing span{width:6px;height:6px;background:var(--text2);border-radius:50%;animation:bounce .9s infinite;}
-.typing span:nth-child(2){animation-delay:.15s;}
-.typing span:nth-child(3){animation-delay:.3s;}
-@keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
-
-/* ── INPUT ── */
-.input-area{padding:16px 20px;border-top:1px solid var(--border);flex-shrink:0;}
-.input-row{display:flex;align-items:flex-end;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;transition:.15s;}
-.input-row:focus-within{border-color:var(--accent);}
-.msg-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:14px;resize:none;max-height:120px;line-height:1.5;font-family:inherit;}
-.msg-input::placeholder{color:var(--text2);}
-.send-btn{background:var(--accent);border:none;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:.15s;}
-.send-btn:hover{background:var(--accent2);}
-.send-btn:disabled{opacity:.4;cursor:not-allowed;}
-.send-btn svg{width:16px;height:16px;}
-.input-actions{display:flex;gap:8px;margin-top:8px;}
-.input-action{background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:20px;font-size:12px;cursor:pointer;transition:.15s;}
-.input-action:hover{border-color:var(--accent);color:var(--accent);}
-
-/* ── PAGES ── */
+/* PAGES */
 .page{display:none;flex:1;overflow-y:auto;padding:28px 32px;}
 .page.active{display:block;}
-.page h1{font-size:22px;font-weight:700;margin-bottom:6px;}
-.page .subtitle{color:var(--text2);font-size:14px;margin-bottom:28px;}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
-.card h3{font-size:14px;font-weight:600;margin-bottom:14px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;}
-.stat{background:var(--bg3);border-radius:8px;padding:14px;text-align:center;}
-.stat-val{font-size:24px;font-weight:700;color:var(--accent);}
-.stat-label{font-size:12px;color:var(--text2);margin-top:4px;}
+#page-chat.active{display:flex;flex-direction:column;padding:0;overflow:hidden;}
+.page-title{font-size:20px;font-weight:700;margin-bottom:4px;}
+.page-sub{color:var(--text2);font-size:13px;margin-bottom:24px;}
 
-/* Settings */
-.setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
+/* CHAT */
+.chat-messages{flex:1;overflow-y:auto;padding:24px 20px;display:flex;flex-direction:column;gap:2px;}
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:20px;padding:40px 20px;}
+.welcome-logo{width:64px;height:64px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto;}
+.welcome h2{font-size:24px;font-weight:700;}
+.welcome-quote{font-size:15px;color:var(--text2);max-width:380px;line-height:1.6;}
+.quick-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:560px;}
+.qb{background:var(--bg3);border:1px solid var(--border);padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;color:var(--text2);transition:.15s;display:flex;align-items:center;gap:6px;}
+.qb:hover{border-color:var(--accent);color:var(--text);background:var(--accent-glow);}
+
+/* message */
+.msg-row{display:flex;gap:0;max-width:720px;width:100%;padding:4px 0;}
+.msg-row.user{flex-direction:row-reverse;align-self:flex-end;}
+.msg-row.bot{align-self:flex-start;}
+.msg-content{max-width:100%;}
+.msg-bubble{padding:10px 14px;border-radius:var(--r);font-size:14px;line-height:1.65;word-break:break-word;}
+.msg-row.bot .msg-bubble{background:var(--bg3);border:1px solid var(--border);border-top-left-radius:4px;}
+.msg-row.user .msg-bubble{background:var(--user);border:1px solid rgba(124,106,247,.25);border-top-right-radius:4px;color:var(--text);}
+.msg-time{font-size:11px;color:var(--text3);margin-top:4px;padding:0 2px;}
+.msg-row.user .msg-time{text-align:right;}
+
+/* pulsing dot */
+.pulse-dot{display:inline-flex;align-items:center;gap:4px;padding:12px 14px;}
+.pulse-dot span{width:7px;height:7px;border-radius:50%;background:var(--text2);animation:pulse-anim 1.2s ease-in-out infinite;}
+.pulse-dot span:nth-child(2){animation-delay:.2s;}
+.pulse-dot span:nth-child(3){animation-delay:.4s;}
+@keyframes pulse-anim{0%,60%,100%{transform:scale(1);opacity:.5;}30%{transform:scale(1.3);opacity:1;}}
+
+/* INPUT */
+.chat-input-wrap{padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0;}
+.chat-input-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;display:flex;align-items:flex-end;gap:8px;transition:.2s;}
+.chat-input-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+.chat-textarea{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:14px;resize:none;max-height:120px;line-height:1.5;font-family:inherit;}
+.chat-textarea::placeholder{color:var(--text3);}
+.send-btn{width:32px;height:32px;background:var(--accent);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:.15s;}
+.send-btn:hover{background:var(--accent2);}
+.send-btn:disabled{opacity:.3;cursor:not-allowed;}
+.chat-tools{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.tool-btn{background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:20px;font-size:12px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:4px;}
+.tool-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:14px;}
+.card-title{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;}
+.stat{background:var(--bg3);border-radius:10px;padding:14px;text-align:center;}
+.stat-val{font-size:22px;font-weight:800;color:var(--accent);}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:3px;}
+
+/* SETTINGS */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border);}
 .setting-row:last-child{border-bottom:none;}
-.setting-info{flex:1;}
-.setting-label{font-size:14px;font-weight:500;}
-.setting-desc{font-size:12px;color:var(--text2);margin-top:2px;}
-.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
-.toggle input{opacity:0;width:0;height:0;}
-.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:12px;cursor:pointer;transition:.2s;}
-.toggle input:checked+.toggle-slider{background:var(--accent);}
-.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
-.toggle input:checked+.toggle-slider:before{transform:translateX(20px);}
-.select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;cursor:pointer;}
-.select:focus{outline:none;border-color:var(--accent);}
+.sl{font-size:14px;font-weight:500;}
+.sd{font-size:12px;color:var(--text2);margin-top:2px;}
+.toggle{position:relative;width:42px;height:23px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.tslider{position:absolute;inset:0;background:var(--border);border-radius:12px;cursor:pointer;transition:.2s;}
+.toggle input:checked+.tslider{background:var(--accent);}
+.tslider::before{content:'';position:absolute;width:17px;height:17px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
+.toggle input:checked+.tslider::before{transform:translateX(19px);}
+select.sel{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer;outline:none;}
+select.sel:focus{border-color:var(--accent);}
 
-/* Personas grid */
-.persona-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
-.persona-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:.15s;text-align:center;}
+/* PERSONAS */
+.persona-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;}
+.persona-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:.15s;text-align:center;}
 .persona-card:hover{border-color:var(--accent);}
-.persona-card.active{border-color:var(--accent);background:rgba(124,106,247,.1);}
-.persona-icon{font-size:24px;margin-bottom:6px;}
-.persona-name{font-size:12px;font-weight:600;}
+.persona-card.active{border-color:var(--accent);background:var(--accent-glow);}
+.persona-e{font-size:22px;margin-bottom:5px;}
+.persona-n{font-size:12px;font-weight:600;}
 
-/* Image gen */
-.image-area{display:flex;flex-direction:column;gap:16px;}
-.image-prompt{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:8px;font-size:14px;resize:vertical;min-height:80px;font-family:inherit;}
-.image-prompt:focus{outline:none;border-color:var(--accent);}
-.service-btns{display:flex;gap:10px;}
-.service-btn{flex:1;padding:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:8px;cursor:pointer;font-size:13px;transition:.15s;}
-.service-btn:hover,.service-btn.active{border-color:var(--accent);background:rgba(124,106,247,.1);}
-.image-result{border-radius:8px;overflow:hidden;max-width:512px;}
-.image-result img{width:100%;display:block;}
-.btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:.15s;}
-.btn-primary{background:var(--accent);color:#fff;}
-.btn-primary:hover{background:var(--accent2);}
-.btn-primary:disabled{opacity:.4;cursor:not-allowed;}
-.btn-danger{background:transparent;border:1px solid var(--danger);color:var(--danger);}
-.btn-danger:hover{background:var(--danger);color:#fff;}
+/* TOOLS PAGE */
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+.tool-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;}
+.tool-card:hover{border-color:var(--accent);background:var(--accent-glow);}
+.tool-card .te{font-size:26px;}
+.tool-card .tn{font-size:13px;font-weight:600;}
+.tool-card .td{font-size:11px;color:var(--text2);}
+.tool-result{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-top:12px;font-size:14px;line-height:1.6;}
+.tool-input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:14px;outline:none;margin-bottom:8px;}
+.tool-input:focus{border-color:var(--accent);}
 
-/* Admin */
+/* IMAGE */
+.img-prompt{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:10px;font-size:14px;resize:vertical;min-height:80px;font-family:inherit;outline:none;}
+.img-prompt:focus{border-color:var(--accent);}
+.service-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;}
+.svc-btn{padding:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;transition:.15s;text-align:center;}
+.svc-btn:hover,.svc-btn.active{border-color:var(--accent);background:var(--accent-glow);color:var(--accent);}
+.img-out{border-radius:12px;overflow:hidden;margin-top:12px;border:1px solid var(--border);}
+.img-out img{width:100%;display:block;}
+.img-cap{padding:10px 12px;background:var(--bg3);font-size:12px;color:var(--text2);}
+
+/* HISTORY */
+.hist-msg{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.hist-role{font-size:18px;flex-shrink:0;width:26px;text-align:center;}
+.hist-text{flex:1;font-size:13px;line-height:1.6;color:var(--text2);}
+
+/* TIERS */
+.tiers-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;}
+.tier-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:18px;text-align:center;position:relative;}
+.tier-card.best{border-color:var(--accent);}
+.tier-card.best::before{content:'Популярный';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:10px;}
+.tier-e{font-size:28px;margin-bottom:8px;}
+.tier-name{font-size:15px;font-weight:700;margin-bottom:4px;}
+.tier-price{font-size:20px;font-weight:800;color:var(--accent);margin-bottom:12px;}
+.tier-feat{text-align:left;font-size:12px;color:var(--text2);line-height:2;}
+.tier-feat li{list-style:none;}
+.tier-feat li::before{content:'✓  ';}
+.tier-buy{display:block;margin-top:14px;padding:9px;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700;transition:.15s;}
+.tier-buy:hover{background:var(--accent2);}
+
+/* ADMIN */
 .admin-table{width:100%;border-collapse:collapse;font-size:13px;}
-.admin-table th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600;}
-.admin-table td{padding:10px 12px;border-bottom:1px solid var(--border);}
-.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
-.badge-free{background:rgba(160,160,160,.15);color:var(--text2);}
-.badge-standard{background:rgba(245,158,11,.15);color:var(--warn);}
-.badge-pro{background:rgba(124,106,247,.15);color:var(--accent);}
-.badge-group{background:rgba(34,197,94,.15);color:var(--success);}
+.admin-table th{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text3);font-weight:600;font-size:11px;text-transform:uppercase;}
+.admin-table td{padding:9px 12px;border-bottom:1px solid var(--border);}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+.bf{background:rgba(136,136,136,.12);color:var(--text2);}
+.bs{background:rgba(245,158,11,.12);color:var(--warn);}
+.bp{background:rgba(124,106,247,.12);color:var(--accent);}
+.bg{background:rgba(34,197,94,.12);color:var(--success);}
 
-/* Tiers modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;display:none;}
+/* BUTTONS */
+.btn{padding:9px 18px;border-radius:9px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-p{background:var(--accent);color:#fff;}
+.btn-p:hover{background:var(--accent2);}
+.btn-p:disabled{opacity:.4;cursor:not-allowed;}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-o:hover{border-color:var(--accent);color:var(--accent);}
+.btn-d{background:transparent;border:1px solid var(--danger);color:var(--danger);}
+.btn-d:hover{background:var(--danger);color:#fff;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px);}
 .modal-overlay.open{display:flex;}
-.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:600px;width:90%;max-height:90vh;overflow-y:auto;}
-.modal h2{font-size:20px;font-weight:700;margin-bottom:20px;text-align:center;}
-.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;}
-.tier-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
-.tier-card.highlight{border-color:var(--accent);}
-.tier-icon{font-size:28px;margin-bottom:8px;}
-.tier-name{font-size:14px;font-weight:700;margin-bottom:4px;}
-.tier-price{font-size:18px;font-weight:800;color:var(--accent);margin-bottom:10px;}
-.tier-features{text-align:left;font-size:12px;color:var(--text2);line-height:1.8;}
-.tier-features li{list-style:none;padding-left:4px;}
-.tier-features li::before{content:'✓ ';}
-.tier-buy{display:block;margin-top:12px;padding:8px;background:var(--accent);color:#fff;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;text-align:center;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:28px;max-width:560px;width:92%;max-height:88vh;overflow-y:auto;}
+.modal h2{font-size:19px;font-weight:700;margin-bottom:18px;text-align:center;}
 
-/* Auth page */
-.auth-page{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;}
-.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:40px;max-width:400px;width:100%;text-align:center;}
-.auth-box h1{font-size:26px;font-weight:800;margin-bottom:8px;}
-.auth-box p{color:var(--text2);font-size:14px;margin-bottom:28px;line-height:1.5;}
-.auth-tabs{display:flex;background:var(--bg3);border-radius:8px;padding:4px;margin-bottom:24px;}
-.auth-tab{flex:1;padding:8px;border-radius:6px;border:none;background:transparent;color:var(--text2);font-size:13px;cursor:pointer;transition:.15s;font-weight:500;}
-.auth-tab.active{background:var(--bg2);color:var(--text);}
-.auth-form{display:flex;flex-direction:column;gap:12px;}
-.auth-input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-size:14px;width:100%;}
-.auth-input:focus{outline:none;border-color:var(--accent);}
-.auth-hint{font-size:12px;color:var(--text2);text-align:left;}
-.auth-divider{display:flex;align-items:center;gap:10px;color:var(--text2);font-size:13px;margin:4px 0;}
-.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border);}
-.tg-widget-wrap{display:flex;justify-content:center;}
-.error-msg{color:var(--danger);font-size:13px;text-align:left;}
-.success-msg{color:var(--success);font-size:13px;text-align:left;}
+/* AUTH */
+.auth-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 60% 20%,rgba(124,106,247,.08),transparent 60%);}
+.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:40px 36px;max-width:400px;width:100%;}
+.auth-logo{text-align:center;margin-bottom:24px;}
+.auth-logo .al-icon{width:56px;height:56px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px;}
+.auth-logo h1{font-size:24px;font-weight:800;}
+.auth-logo p{font-size:13px;color:var(--text2);margin-top:4px;}
+.auth-tabs{display:flex;background:var(--bg3);border-radius:10px;padding:3px;margin-bottom:22px;}
+.at{flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-size:13px;cursor:pointer;transition:.15s;font-weight:500;}
+.at.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.3);}
+.ai{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:10px;font-size:14px;outline:none;font-family:inherit;}
+.ai:focus{border-color:var(--accent);}
+.af{display:flex;flex-direction:column;gap:10px;}
+.ah{font-size:12px;color:var(--text2);}
+.err{color:var(--danger);font-size:13px;}
+.tgw{display:flex;justify-content:center;padding:4px 0;}
+.divider{display:flex;align-items:center;gap:8px;color:var(--text3);font-size:12px;margin:4px 0;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
 
-/* Mobile */
-@media(max-width:700px){
+/* SEARCH MODAL */
+.search-input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:10px;font-size:15px;outline:none;margin-bottom:12px;}
+.search-input:focus{border-color:var(--accent);}
+
+@media(max-width:680px){
   .sidebar{display:none;}
   .page{padding:16px;}
-  .tiers{grid-template-columns:1fr 1fr;}
+  .tiers-grid{grid-template-columns:1fr 1fr;}
+  .tools-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}
 }
 </style>
 </head>
 <body>
 
-<!-- AUTH PAGE -->
-<div class="auth-page" id="authPage">
+<!-- AUTH -->
+<div class="auth-wrap" id="authWrap">
   <div class="auth-box">
-    <div style="font-size:48px;margin-bottom:12px;">🤖</div>
-    <h1>ebaAI</h1>
-    <p>AI-ассистент нового поколения.<br>Войди чтобы начать общение.</p>
-    <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchAuthTab('widget')">Telegram</button>
-      <button class="auth-tab" onclick="switchAuthTab('code')">Код</button>
+    <div class="auth-logo">
+      <div class="al-icon">🤖</div>
+      <h1>ebaAI</h1>
+      <p>Войди чтобы начать</p>
     </div>
-
-    <!-- Widget tab -->
+    <div class="auth-tabs">
+      <button class="at active" onclick="authTab('widget')">Telegram</button>
+      <button class="at" onclick="authTab('code')">Код</button>
+    </div>
     <div id="tabWidget">
-      <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Нажми кнопку — Telegram попросит подтверждение</p>
-      <div class="tg-widget-wrap">
+      <p style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:14px;">Нажми — Telegram попросит подтверждение</p>
+      <div class="tgw">
         <script async src="https://telegram.org/js/telegram-widget.js?22"
           data-telegram-login="ebaAI_offc_bot"
           data-size="large"
-          data-onauth="onTelegramAuth(user)"
+          data-onauth="onTgAuth(user)"
           data-request-access="write"
           data-userpic="false"></script>
       </div>
     </div>
-
-    <!-- Code tab -->
     <div id="tabCode" style="display:none;">
-      <div class="auth-form" id="formUsername">
-        <input class="auth-input" id="authUsername" placeholder="@username в Telegram" autocomplete="off">
-        <div id="authError" class="error-msg" style="display:none;"></div>
-        <button class="btn btn-primary" onclick="requestCode()" style="width:100%;">Получить код</button>
-        <p class="auth-hint">Бот пришлёт 6-значный код в Telegram</p>
+      <div class="af" id="formUser">
+        <input class="ai" id="inUser" placeholder="@username в Telegram" autocomplete="off" onkeydown="if(event.key==='Enter')reqCode()">
+        <div id="errUser" class="err" style="display:none;"></div>
+        <button class="btn btn-p" style="width:100%;" onclick="reqCode()">Получить код</button>
+        <p class="ah">Бот пришлёт 6-значный код</p>
       </div>
-      <div class="auth-form" id="formCode" style="display:none;">
-        <p style="font-size:13px;color:var(--text2);">Код отправлен. Введи его ниже:</p>
-        <input class="auth-input" id="authCode" placeholder="000000" maxlength="6" style="text-align:center;font-size:22px;letter-spacing:8px;">
-        <div id="codeError" class="error-msg" style="display:none;"></div>
-        <button class="btn btn-primary" onclick="verifyCode()" style="width:100%;">Войти</button>
-        <button onclick="showUsernameForm()" style="background:transparent;border:none;color:var(--text2);font-size:13px;cursor:pointer;margin-top:4px;">← Изменить username</button>
+      <div class="af" id="formCode" style="display:none;">
+        <p style="font-size:13px;color:var(--text2);">Введи код из Telegram:</p>
+        <input class="ai" id="inCode" placeholder="000000" maxlength="6" style="text-align:center;font-size:24px;letter-spacing:10px;" onkeydown="if(event.key==='Enter')doVerify()">
+        <div id="errCode" class="err" style="display:none;"></div>
+        <button class="btn btn-p" style="width:100%;" onclick="doVerify()">Войти</button>
+        <button onclick="formUser.style.display='flex';formCode.style.display='none';" style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer;text-align:center;">← Изменить username</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- APP -->
 <div id="app" style="display:none;flex:1;display:none;">
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <div class="logo"><span>🤖</span> ebaAI</div>
+<!-- sidebar -->
+<div class="sidebar">
+  <div class="sb-logo">
+    <div class="icon">🤖</div>
+    <div><span>ebaAI</span><small id="sbVersion">v1</small></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Основное</div>
+    <div class="ni active" id="ni-chat" onclick="go('chat')"><span class="e">💬</span>Чат</div>
+    <div class="ni" id="ni-tools" onclick="go('tools')"><span class="e">🛠</span>Инструменты</div>
+    <div class="ni" id="ni-image" onclick="go('image')"><span class="e">🎨</span>Картинки</div>
+    <div class="ni" id="ni-games" onclick="go('games')"><span class="e">🎮</span>Игры</div>
+    <div class="nav-section">Личное</div>
+    <div class="ni" id="ni-history" onclick="go('history')"><span class="e">🕐</span>История</div>
+    <div class="ni" id="ni-profile" onclick="go('profile')"><span class="e">👤</span>Профиль</div>
+    <div class="ni" id="ni-settings" onclick="go('settings')"><span class="e">⚙️</span>Настройки</div>
+    <div class="ni" id="ni-subscribe" onclick="go('subscribe')"><span class="e">⭐</span>Подписка</div>
+    <div class="ni admin-nav" id="ni-admin" onclick="go('admin')" style="display:none;"><span class="e">🛠</span>Админ</div>
+  </nav>
+  <div class="sb-user">
+    <div class="avatar" id="sbAvatar">?</div>
+    <div class="user-info">
+      <div class="user-name" id="sbName">Загрузка...</div>
+      <div class="user-tier" id="sbTier"></div>
     </div>
-    <nav class="nav">
-      <div class="nav-item active" onclick="showPage('chat')" id="nav-chat"><span class="icon">💬</span> Чат</div>
-      <div class="nav-item" onclick="showPage('image')" id="nav-image"><span class="icon">🎨</span> Картинки</div>
-      <div class="nav-item" onclick="showPage('history')" id="nav-history"><span class="icon">🕐</span> История</div>
-      <div class="nav-item" onclick="showPage('profile')" id="nav-profile"><span class="icon">👤</span> Профиль</div>
-      <div class="nav-item" onclick="showPage('settings')" id="nav-settings"><span class="icon">⚙️</span> Настройки</div>
-      <div class="nav-item" onclick="showPage('subscribe')" id="nav-subscribe"><span class="icon">⭐</span> Подписка</div>
-      <div class="nav-item admin-only" onclick="showPage('admin')" id="nav-admin" style="display:none;"><span class="icon">🛠</span> Админ</div>
-    </nav>
-    <div class="sidebar-user">
-      <div class="avatar" id="sidebarAvatar">?</div>
-      <div class="user-info">
-        <div class="user-name" id="sidebarName">Загрузка...</div>
-        <div class="user-tier" id="sidebarTier"></div>
+    <button class="logout-btn" onclick="doLogout()" title="Выйти">↩</button>
+  </div>
+</div>
+
+<!-- main -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topTitle">Чат</div>
+    <button class="pro-btn" id="proBanner" style="display:none;" onclick="openModal('tierModal')">💎 Upgrade</button>
+  </div>
+
+  <!-- CHAT -->
+  <div class="page active" id="page-chat">
+    <div class="chat-messages" id="chatMsgs">
+      <div class="welcome" id="welcomeBlock">
+        <div class="welcome-logo">🤖</div>
+        <h2>Привет, я ebaAI</h2>
+        <p class="welcome-quote" id="wqText">С чего начнём?</p>
+        <div class="quick-btns">
+          <div class="qb" onclick="qs('Расскажи анекдот')">😂 Анекдот</div>
+          <div class="qb" onclick="qs('Напиши стихотворение')">✍️ Стихотворение</div>
+          <div class="qb" onclick="qs('Погода в Москве')">🌤 Погода</div>
+          <div class="qb" onclick="qs('Что интересного произошло сегодня?')">📰 Новости дня</div>
+          <div class="qb" onclick="qs('Придумай загадку')">🧩 Загадка</div>
+          <div class="qb" onclick="qs('Расскажи интересный факт')">💡 Факт</div>
+        </div>
       </div>
-      <button onclick="logout()" title="Выйти" style="background:transparent;border:none;color:var(--text2);cursor:pointer;font-size:16px;">↩</button>
+    </div>
+    <div class="chat-input-wrap">
+      <div class="chat-input-box">
+        <textarea class="chat-textarea" id="chatIn" placeholder="Напиши что-нибудь..." rows="1"
+          onkeydown="chatKey(event)" oninput="autoH(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="chatSend()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+        </button>
+      </div>
+      <div class="chat-tools">
+        <button class="tool-btn" onclick="openSearch()">🔍 Поиск</button>
+        <button class="tool-btn" onclick="go('image')">🎨 Картинка</button>
+        <button class="tool-btn" onclick="chatQuick('weather')">🌤 Погода</button>
+        <button class="tool-btn" onclick="chatQuick('news')">📰 Новости</button>
+        <button class="tool-btn" onclick="chatClear()">🗑 Очистить</button>
+      </div>
     </div>
   </div>
 
-  <!-- Main -->
-  <div class="main">
-    <!-- Topbar -->
-    <div class="topbar">
-      <div class="topbar-title" id="topbarTitle">Чат</div>
-      <button class="promo-btn" onclick="openModal('tiersModal')" id="promoBanner" style="display:none;">✨ Upgrade до Pro</button>
+  <!-- TOOLS -->
+  <div class="page" id="page-tools">
+    <div class="page-title">🛠 Инструменты</div>
+    <div class="page-sub">Все возможности бота одним нажатием</div>
+    <div class="tools-grid">
+      <div class="tool-card" onclick="toolAction('weather')"><div class="te">🌤</div><div class="tn">Погода</div><div class="td">По городу</div></div>
+      <div class="tool-card" onclick="toolAction('news')"><div class="te">📰</div><div class="tn">Новости</div><div class="td">По теме</div></div>
+      <div class="tool-card" onclick="toolAction('search')"><div class="te">🔍</div><div class="tn">Поиск</div><div class="td">В интернете</div></div>
+      <div class="tool-card" onclick="toolAction('wiki')"><div class="te">📚</div><div class="tn">Википедия</div><div class="td">Статьи</div></div>
+      <div class="tool-card" onclick="toolAction('translate')"><div class="te">🌐</div><div class="tn">Перевод</div><div class="td">Авто-язык</div></div>
+      <div class="tool-card" onclick="toolAction('define')"><div class="te">📖</div><div class="tn">Слово</div><div class="td">Толкование</div></div>
+      <div class="tool-card" onclick="toolAction('crypto')"><div class="te">💰</div><div class="tn">Крипта</div><div class="td">Курсы</div></div>
+      <div class="tool-card" onclick="toolAction('horoscope')"><div class="te">🔮</div><div class="tn">Гороскоп</div><div class="td">По знаку</div></div>
+      <div class="tool-card" onclick="toolAction('today')"><div class="te">📅</div><div class="tn">Сегодня</div><div class="td">События дня</div></div>
+      <div class="tool-card" onclick="toolAction('time')"><div class="te">🕐</div><div class="tn">Время</div><div class="td">В городе</div></div>
+      <div class="tool-card" onclick="toolAction('decide')"><div class="te">🎯</div><div class="tn">Решение</div><div class="td">Помогу выбрать</div></div>
+      <div class="tool-card" onclick="toolAction('trivia')"><div class="te">🧠</div><div class="tn">Триvia</div><div class="td">Вопрос на IQ</div></div>
     </div>
+    <div id="toolOutput" style="display:none;" class="tool-result"></div>
+  </div>
 
-    <!-- CHAT PAGE -->
-    <div class="page active" id="page-chat" style="display:flex;flex-direction:column;padding:0;overflow:hidden;">
-      <div class="chat-area" id="chatArea">
-        <div class="welcome" id="welcomeScreen">
-          <div class="welcome-icon">🤖</div>
-          <h2>Привет, я ebaAI</h2>
-          <p id="welcomeQuote">С чего начнём?</p>
-          <div class="suggestions">
-            <div class="suggestion" onclick="sendSuggestion('Расскажи анекдот')">😂 Расскажи анекдот</div>
-            <div class="suggestion" onclick="sendSuggestion('Напиши стихотворение')">✍️ Напиши стихотворение</div>
-            <div class="suggestion" onclick="sendSuggestion('Какая сейчас погода в Москве?')">🌤 Погода в Москве</div>
-            <div class="suggestion" onclick="sendSuggestion('Объясни что такое квантовая физика')">🔬 Квантовая физика</div>
-          </div>
-        </div>
-      </div>
-      <div class="input-area">
-        <div class="input-row">
-          <textarea class="msg-input" id="msgInput" placeholder="Напиши что-нибудь..." rows="1"
-            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-          <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
-          </button>
-        </div>
-        <div class="input-actions">
-          <button class="input-action" onclick="clearChat()">🗑 Очистить</button>
-          <button class="input-action" onclick="showPage('image')">🎨 Картинка</button>
-        </div>
+  <!-- IMAGE -->
+  <div class="page" id="page-image">
+    <div class="page-title">🎨 Генерация картинок</div>
+    <div class="page-sub">Опиши что хочешь увидеть</div>
+    <textarea class="img-prompt" id="imgPrompt" placeholder="Например: закат над горами в стиле аниме..."></textarea>
+    <div class="service-grid">
+      <button class="svc-btn active" id="svcCF" onclick="selSvc('cf')">🤖 Cloudflare AI<br><small style="color:var(--text2);">Реалистично</small></button>
+      <button class="svc-btn" id="svcR" onclick="selSvc('raphael')">🎨 Raphael<br><small style="color:var(--text2);">Художественно</small></button>
+    </div>
+    <button class="btn btn-p" id="genBtn" onclick="doGenImg()">✨ Сгенерировать</button>
+    <div id="imgOut" style="display:none;" class="img-out"></div>
+  </div>
+
+  <!-- GAMES -->
+  <div class="page" id="page-games">
+    <div class="page-title">🎮 Игры</div>
+    <div class="page-sub">Нажми — начнём прямо здесь</div>
+    <div class="tools-grid">
+      <div class="tool-card" onclick="playGame('dice')"><div class="te">🎲</div><div class="tn">Кубик</div></div>
+      <div class="tool-card" onclick="playGame('coin')"><div class="te">🪙</div><div class="tn">Монетка</div></div>
+      <div class="tool-card" onclick="playGame('card')"><div class="te">🃏</div><div class="tn">Карта</div></div>
+      <div class="tool-card" onclick="playGame('slot')"><div class="te">🎰</div><div class="tn">Слоты</div></div>
+      <div class="tool-card" onclick="playGame('rps')"><div class="te">✂️</div><div class="tn">КНБ</div></div>
+      <div class="tool-card" onclick="playGame('riddle')"><div class="te">🧩</div><div class="tn">Загадка</div></div>
+      <div class="tool-card" onclick="playGame('tongue')"><div class="te">📝</div><div class="tn">Скороговорка</div></div>
+      <div class="tool-card" onclick="playGame('fact')"><div class="te">💡</div><div class="tn">Факт</div></div>
+      <div class="tool-card" onclick="playGame('joke')"><div class="te">😂</div><div class="tn">Анекдот</div></div>
+      <div class="tool-card" onclick="playGame('predict')"><div class="te">🔮</div><div class="tn">Предсказание</div></div>
+      <div class="tool-card" onclick="playGame('iq')"><div class="te">🧠</div><div class="tn">IQ вопрос</div></div>
+      <div class="tool-card" onclick="playGame('tod')"><div class="te">🎯</div><div class="tn">П или Д</div></div>
+      <div class="tool-card" onclick="playGame('flag')"><div class="te">🌍</div><div class="tn">Угадай флаг</div></div>
+      <div class="tool-card" onclick="playGame('quote')"><div class="te">💬</div><div class="tn">Цитата</div></div>
+      <div class="tool-card" onclick="playGame('challenge')"><div class="te">🏆</div><div class="tn">Челлендж</div></div>
+    </div>
+    <div id="gameOut" style="display:none;" class="tool-result"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div class="page-title">🕐 История чата</div>
+    <div class="page-sub">Последние сообщения с ebaAI</div>
+    <div id="histList"></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="page" id="page-profile">
+    <div class="page-title">👤 Профиль</div>
+    <div class="page-sub">Статистика и информация</div>
+    <div class="card">
+      <div class="card-title">Статистика</div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-val" id="pMsgs">—</div><div class="stat-lbl">Сообщений</div></div>
+        <div class="stat"><div class="stat-val" id="pImgs">—</div><div class="stat-lbl">Картинок</div></div>
+        <div class="stat"><div class="stat-val" id="pRefs">—</div><div class="stat-lbl">Рефералов</div></div>
+        <div class="stat"><div class="stat-val" id="pStars">—</div><div class="stat-lbl">⭐ звёзд</div></div>
       </div>
     </div>
-
-    <!-- IMAGE PAGE -->
-    <div class="page" id="page-image">
-      <h1>🎨 Генерация картинок</h1>
-      <p class="subtitle">Опиши что хочешь нарисовать</p>
-      <div class="image-area">
-        <textarea class="image-prompt" id="imagePrompt" placeholder="Например: закат над горами в стиле аниме..."></textarea>
+    <div class="card">
+      <div class="card-title">Подписка</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
         <div>
-          <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">Выбери движок:</div>
-          <div class="service-btns">
-            <button class="service-btn active" id="btn-cf" onclick="selectService('cf')">🤖 Cloudflare AI<br><span style="font-size:11px;color:var(--text2);">Реализм</span></button>
-            <button class="service-btn" id="btn-raphael" onclick="selectService('raphael')">🎨 Raphael<br><span style="font-size:11px;color:var(--text2);">Художественный</span></button>
-          </div>
+          <div id="pTierLabel" style="font-size:17px;font-weight:700;"></div>
+          <div id="pTierUntil" style="font-size:13px;color:var(--text2);margin-top:4px;"></div>
         </div>
-        <button class="btn btn-primary" id="genBtn" onclick="generateImage()">✨ Сгенерировать</button>
-        <div id="imageResult" style="display:none;" class="image-result"></div>
+        <button class="btn btn-p" onclick="openModal('tierModal')">Улучшить</button>
       </div>
     </div>
-
-    <!-- HISTORY PAGE -->
-    <div class="page" id="page-history">
-      <h1>🕐 История чата</h1>
-      <p class="subtitle">Твои последние сообщения с ebaAI</p>
-      <div id="historyList"></div>
-    </div>
-
-    <!-- PROFILE PAGE -->
-    <div class="page" id="page-profile">
-      <h1>👤 Профиль</h1>
-      <p class="subtitle">Статистика и информация</p>
-      <div class="card">
-        <h3>Статистика</h3>
-        <div class="stat-grid">
-          <div class="stat"><div class="stat-val" id="statMsgs">—</div><div class="stat-label">Сообщений</div></div>
-          <div class="stat"><div class="stat-val" id="statImgs">—</div><div class="stat-label">Картинок</div></div>
-          <div class="stat"><div class="stat-val" id="statRefs">—</div><div class="stat-label">Рефералов</div></div>
-          <div class="stat"><div class="stat-val" id="statStars">—</div><div class="stat-label">⭐ звёзд</div></div>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Подписка</h3>
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div>
-            <div id="profileTierLabel" style="font-size:18px;font-weight:700;"></div>
-            <div id="profileTierUntil" style="font-size:13px;color:var(--text2);margin-top:4px;"></div>
-          </div>
-          <button class="btn btn-primary" onclick="openModal('tiersModal')">Улучшить</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Реферальная программа</h3>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Приглашай друзей и получай бонусы. Каждые 3 друга = Pro на 5 дней.</p>
-        <div style="display:flex;gap:8px;">
-          <input id="refLink" class="auth-input" style="flex:1;" readonly>
-          <button class="btn btn-primary" onclick="copyRef()">Копировать</button>
-        </div>
+    <div class="card">
+      <div class="card-title">Реферальная ссылка</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">3 друга = Pro на 5 дней</p>
+      <div style="display:flex;gap:8px;">
+        <input id="refIn" class="ai" style="flex:1;" readonly>
+        <button class="btn btn-p" onclick="cpRef()">Копировать</button>
       </div>
     </div>
+  </div>
 
-    <!-- SETTINGS PAGE -->
-    <div class="page" id="page-settings">
-      <h1>⚙️ Настройки</h1>
-      <p class="subtitle">Персонализация бота</p>
-      <div class="card">
-        <h3>Поведение</h3>
-        <div class="setting-row">
-          <div class="setting-info">
-            <div class="setting-label">🤬 Маты в ответах</div>
-            <div class="setting-desc">Бот будет материться для выразительности</div>
-          </div>
-          <label class="toggle"><input type="checkbox" id="toggleSwear" onchange="saveSetting('swear',this.checked?1:0)"><span class="toggle-slider"></span></label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <div class="setting-label">🔔 Еженедельная статистика</div>
-            <div class="setting-desc">Бот присылает статистику каждое воскресенье</div>
-          </div>
-          <label class="toggle"><input type="checkbox" id="toggleNotif" onchange="saveSetting('weekly_notif',this.checked)"><span class="toggle-slider"></span></label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <div class="setting-label">📏 Длина ответов</div>
-            <div class="setting-desc">Насколько подробно отвечает бот</div>
-          </div>
-          <select class="select" id="selectLen" onchange="saveSetting('answer_length',this.value)">
-            <option value="short">Короткие</option>
-            <option value="normal" selected>Обычные</option>
-            <option value="long">Подробные</option>
-          </select>
-        </div>
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="page-title">⚙️ Настройки</div>
+    <div class="page-sub">Персонализация бота</div>
+    <div class="card">
+      <div class="card-title">Поведение</div>
+      <div class="setting-row">
+        <div><div class="sl">🤬 Маты в ответах</div><div class="sd">Бот будет материться для выразительности</div></div>
+        <label class="toggle"><input type="checkbox" id="togSwear" onchange="ss('swear',this.checked?1:0)"><span class="tslider"></span></label>
       </div>
-      <div class="card" id="personaCard">
-        <h3>🎭 Личность бота <span style="font-size:11px;color:var(--accent);">Pro</span></h3>
-        <div class="persona-grid" id="personaGrid"></div>
+      <div class="setting-row">
+        <div><div class="sl">🔔 Еженедельная статистика</div><div class="sd">Отчёт каждое воскресенье в Telegram</div></div>
+        <label class="toggle"><input type="checkbox" id="togNotif" onchange="ss('weekly_notif',this.checked)"><span class="tslider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="sl">📏 Длина ответов</div><div class="sd">Насколько подробно отвечает бот</div></div>
+        <select class="sel" id="selLen" onchange="ss('answer_length',this.value)">
+          <option value="short">Короткие</option>
+          <option value="normal" selected>Обычные</option>
+          <option value="long">Подробные</option>
+        </select>
       </div>
     </div>
+    <div class="card" id="personaSection">
+      <div class="card-title">🎭 Личность бота <span id="proLabel" style="color:var(--accent);font-size:10px;"></span></div>
+      <div class="persona-grid" id="personaGrid"></div>
+    </div>
+  </div>
 
-    <!-- SUBSCRIBE PAGE -->
-    <div class="page" id="page-subscribe">
-      <h1>⭐ Подписка</h1>
-      <p class="subtitle">Оплата только через Telegram Stars</p>
-      <div class="tiers" style="margin-top:8px;">
-        <div class="tier-card">
-          <div class="tier-icon">🆓</div>
-          <div class="tier-name">Free</div>
-          <div class="tier-price">0 ⭐</div>
-          <ul class="tier-features">
-            <li>80 сообщений / 3ч</li><li>5 картинок / день</li><li>Поиск, погода, новости</li><li>15 игр</li>
-          </ul>
-        </div>
-        <div class="tier-card highlight">
-          <div class="tier-icon">⭐</div>
-          <div class="tier-name">Standard</div>
-          <div class="tier-price">29 ⭐</div>
-          <ul class="tier-features">
-            <li>160 сообщений / 3ч</li><li>15 картинок / день</li><li>Перевод, QR, цвет</li><li>Секретные сообщения</li>
-          </ul>
-          <a href="https://t.me/ebaAI_offc_bot?start=buy_standard" target="_blank" class="tier-buy">Купить в Telegram</a>
-        </div>
-        <div class="tier-card">
-          <div class="tier-icon">💎</div>
-          <div class="tier-name">Pro</div>
-          <div class="tier-price">59 ⭐</div>
-          <ul class="tier-features">
-            <li>Безлимит сообщений</li><li>HD картинки</li><li>14 личностей бота</li><li>✨ значок Pro</li>
-          </ul>
-          <a href="https://t.me/ebaAI_offc_bot?start=buy_pro" target="_blank" class="tier-buy">Купить в Telegram</a>
-        </div>
-        <div class="tier-card">
-          <div class="tier-icon">👑</div>
-          <div class="tier-name">Group+</div>
-          <div class="tier-price">49 ⭐</div>
-          <ul class="tier-features">
-            <li>Модерация групп</li><li>Антиспам / антифлуд</li><li>Таблица лидеров</li><li>Достижения</li>
-          </ul>
-          <a href="https://t.me/ebaAI_offc_bot?start=buy_group" target="_blank" class="tier-buy">Купить в Telegram</a>
-        </div>
+  <!-- SUBSCRIBE -->
+  <div class="page" id="page-subscribe">
+    <div class="page-title">⭐ Подписка</div>
+    <div class="page-sub">Оплата только через Telegram Stars</div>
+    <div class="tiers-grid">
+      <div class="tier-card">
+        <div class="tier-e">🆓</div><div class="tier-name">Free</div><div class="tier-price">0 ⭐</div>
+        <ul class="tier-feat"><li>80 сообщений/3ч</li><li>5 картинок/день</li><li>Поиск и погода</li><li>15 игр</li></ul>
+      </div>
+      <div class="tier-card best">
+        <div class="tier-e">⭐</div><div class="tier-name">Standard</div><div class="tier-price">29 ⭐/мес</div>
+        <ul class="tier-feat"><li>160 сообщений/3ч</li><li>15 картинок/день</li><li>Перевод + QR</li><li>Секрет. сообщения</li></ul>
+        <a href="https://t.me/ebaAI_offc_bot?start=buy_standard" target="_blank" class="tier-buy">Купить в Telegram</a>
+      </div>
+      <div class="tier-card">
+        <div class="tier-e">💎</div><div class="tier-name">Pro</div><div class="tier-price">59 ⭐/мес</div>
+        <ul class="tier-feat"><li>Безлимит сообщений</li><li>HD картинки</li><li>14 личностей</li><li>✨ значок Pro</li></ul>
+        <a href="https://t.me/ebaAI_offc_bot?start=buy_pro" target="_blank" class="tier-buy">Купить в Telegram</a>
+      </div>
+      <div class="tier-card">
+        <div class="tier-e">👑</div><div class="tier-name">Group+</div><div class="tier-price">49 ⭐/мес</div>
+        <ul class="tier-feat"><li>Полная модерация</li><li>Антиспам/антифлуд</li><li>Таблица лидеров</li><li>Достижения</li></ul>
+        <a href="https://t.me/ebaAI_offc_bot?start=buy_group" target="_blank" class="tier-buy">Купить в Telegram</a>
       </div>
     </div>
+  </div>
 
-    <!-- ADMIN PAGE -->
-    <div class="page" id="page-admin">
-      <h1>🛠 Админ-панель</h1>
-      <p class="subtitle">Управление ebaAI</p>
-      <div class="card">
-        <h3>Статистика</h3>
-        <div class="stat-grid">
-          <div class="stat"><div class="stat-val" id="adminUsers">—</div><div class="stat-label">Пользователей</div></div>
-          <div class="stat"><div class="stat-val" id="adminToday">—</div><div class="stat-label">Новых сегодня</div></div>
-          <div class="stat"><div class="stat-val" id="adminMsgs">—</div><div class="stat-label">Сообщений</div></div>
-        </div>
-      </div>
-      <div class="card">
-        <h3>По тарифам</h3>
-        <div id="adminTiers"></div>
-      </div>
-      <div class="card">
-        <h3>Рассылка</h3>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <textarea id="broadcastText" class="image-prompt" placeholder="Текст рассылки..."></textarea>
-          <div style="display:flex;gap:10px;align-items:center;">
-            <input type="datetime-local" id="broadcastTime" class="auth-input" style="flex:1;">
-            <button class="btn btn-primary" onclick="sendBroadcast()">📢 Отправить</button>
-          </div>
-          <p style="font-size:12px;color:var(--text2);">Оставь дату пустой для немедленной отправки</p>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Ошибки</h3>
-        <div id="adminErrors" style="font-size:13px;"></div>
-        <button class="btn btn-danger" onclick="loadAdminErrors()" style="margin-top:12px;">Обновить</button>
-      </div>
-      <div class="card">
-        <h3>Пользователи</h3>
-        <input class="auth-input" id="userSearch" placeholder="Поиск по имени или username..." style="margin-bottom:12px;" oninput="filterUsers()">
-        <div style="overflow-x:auto;">
-          <table class="admin-table">
-            <thead><tr><th>Имя</th><th>Username</th><th>Тариф</th><th>Регистрация</th></tr></thead>
-            <tbody id="usersTable"></tbody>
-          </table>
-        </div>
-        <div id="usersPagination" style="display:flex;gap:8px;margin-top:12px;"></div>
+  <!-- ADMIN -->
+  <div class="page" id="page-admin">
+    <div class="page-title">🛠 Админ-панель</div>
+    <div class="page-sub">Управление ebaAI</div>
+    <div class="card">
+      <div class="card-title">Статистика</div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-val" id="aUsers">—</div><div class="stat-lbl">Пользователей</div></div>
+        <div class="stat"><div class="stat-val" id="aToday">—</div><div class="stat-lbl">Новых сегодня</div></div>
+        <div class="stat"><div class="stat-val" id="aMsgs">—</div><div class="stat-lbl">Сообщений</div></div>
       </div>
     </div>
-
-  </div><!-- /main -->
+    <div class="card">
+      <div class="card-title">Рассылка</div>
+      <textarea id="bcText" class="img-prompt" style="min-height:70px;" placeholder="Текст рассылки..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;">
+        <input type="datetime-local" id="bcTime" class="ai" style="flex:1;max-width:240px;">
+        <button class="btn btn-p" onclick="doBroadcast()">📢 Отправить</button>
+      </div>
+      <p style="font-size:12px;color:var(--text2);margin-top:6px;">Дата пуста = немедленно</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Пользователи</div>
+      <input class="ai" id="userQ" placeholder="Поиск..." style="margin-bottom:10px;" oninput="filterU()">
+      <div style="overflow-x:auto;">
+        <table class="admin-table">
+          <thead><tr><th>Имя</th><th>Username</th><th>Тариф</th><th>Дата</th></tr></thead>
+          <tbody id="usersT"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Последние ошибки <button class="btn btn-o" style="font-size:11px;padding:4px 10px;margin-left:8px;" onclick="loadErrors()">Обновить</button></div>
+      <div id="errList" style="font-size:13px;"></div>
+    </div>
+  </div>
+</div><!-- /main -->
 </div><!-- /app -->
 
+<!-- SEARCH MODAL -->
+<div class="modal-overlay" id="searchModal" onclick="closeOut(event,'searchModal')">
+  <div class="modal" style="max-width:480px;">
+    <h2>🔍 Поиск</h2>
+    <input class="search-input" id="searchIn" placeholder="Что ищем?" onkeydown="if(event.key==='Enter')doSearch()">
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-p" style="flex:1;" onclick="doSearch()">Найти</button>
+      <button class="btn btn-o" onclick="closeModal('searchModal')">Отмена</button>
+    </div>
+    <div id="searchOut" style="margin-top:14px;font-size:14px;line-height:1.6;color:var(--text2);"></div>
+  </div>
+</div>
+
+<!-- TOOL MODAL -->
+<div class="modal-overlay" id="toolModal" onclick="closeOut(event,'toolModal')">
+  <div class="modal" style="max-width:480px;">
+    <h2 id="toolModalTitle">Инструмент</h2>
+    <input class="search-input" id="toolIn" placeholder="Введи запрос..." onkeydown="if(event.key==='Enter')runTool()">
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-p" style="flex:1;" onclick="runTool()">Выполнить</button>
+      <button class="btn btn-o" onclick="closeModal('toolModal')">Отмена</button>
+    </div>
+    <div id="toolModalOut" style="margin-top:14px;font-size:14px;line-height:1.6;"></div>
+  </div>
+</div>
+
 <!-- TIERS MODAL -->
-<div class="modal-overlay" id="tiersModal" onclick="closeModalOutside(event,'tiersModal')">
+<div class="modal-overlay" id="tierModal" onclick="closeOut(event,'tierModal')">
   <div class="modal">
     <h2>⭐ Тарифы ebaAI</h2>
-    <div class="tiers">
-      <div class="tier-card">
-        <div class="tier-icon">🆓</div><div class="tier-name">Free</div><div class="tier-price">0 ⭐</div>
-        <ul class="tier-features"><li>80 сообщений/3ч</li><li>5 картинок/день</li><li>Поиск и погода</li></ul>
-      </div>
-      <div class="tier-card highlight">
-        <div class="tier-icon">⭐</div><div class="tier-name">Standard</div><div class="tier-price">29 ⭐/мес</div>
-        <ul class="tier-features"><li>160 сообщений/3ч</li><li>15 картинок/день</li><li>Перевод и QR</li></ul>
-        <a href="https://t.me/ebaAI_offc_bot?start=buy_standard" target="_blank" class="tier-buy">Купить</a>
-      </div>
-      <div class="tier-card">
-        <div class="tier-icon">💎</div><div class="tier-name">Pro</div><div class="tier-price">59 ⭐/мес</div>
-        <ul class="tier-features"><li>Безлимит</li><li>HD картинки</li><li>14 личностей</li></ul>
-        <a href="https://t.me/ebaAI_offc_bot?start=buy_pro" target="_blank" class="tier-buy">Купить</a>
-      </div>
+    <div class="tiers-grid">
+      <div class="tier-card"><div class="tier-e">🆓</div><div class="tier-name">Free</div><div class="tier-price">0 ⭐</div><ul class="tier-feat"><li>80 сообщ/3ч</li><li>5 картинок</li></ul></div>
+      <div class="tier-card best"><div class="tier-e">⭐</div><div class="tier-name">Standard</div><div class="tier-price">29 ⭐/мес</div><ul class="tier-feat"><li>160 сообщ/3ч</li><li>15 картинок</li></ul><a href="https://t.me/ebaAI_offc_bot?start=buy_standard" target="_blank" class="tier-buy">Купить</a></div>
+      <div class="tier-card"><div class="tier-e">💎</div><div class="tier-name">Pro</div><div class="tier-price">59 ⭐/мес</div><ul class="tier-feat"><li>Безлимит</li><li>HD картинки</li><li>14 личностей</li></ul><a href="https://t.me/ebaAI_offc_bot?start=buy_pro" target="_blank" class="tier-buy">Купить</a></div>
     </div>
-    <button onclick="closeModal('tiersModal')" style="width:100%;margin-top:16px;padding:10px;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;cursor:pointer;">Закрыть</button>
+    <button class="btn btn-o" style="width:100%;margin-top:14px;" onclick="closeModal('tierModal')">Закрыть</button>
   </div>
 </div>
 
 <script>
-const API = 'https://restless-resonance-59cf.evgen20111110.workers.dev';
-const ADMIN_ID = 6168325401;
-const QUOTES = [
-  'С чего начнём?',
-  'Чем могу помочь?',
-  'Задай любой вопрос.',
-  'Привет! Что на уме?',
-  'Готов к работе. 🚀',
-  'Я слушаю тебя.',
-];
-const PERSONAS = {
-  neutral:'🙂 Нейтральный', nyashka:'🧸 Няшка', villain:'😈 Злодей',
-  robot:'🤖 Робот', sage:'🧙 Мудрец', friend:'🤝 Друг',
-  bestie:'💛 Лучший друг', love:'💕 Любовь', psycho:'🧠 Психолог',
-  nerd:'🤓 Ботаник', bully:'😤 Задира',
-};
-const TIER_LABELS = {free:'🆓 Free',standard:'⭐ Standard',pro:'💎 Pro',group:'👑 Group+'};
+const API='https://restless-resonance-59cf.evgen20111110.workers.dev';
+const ADMIN_ID=6168325401;
+const QUOTES=['С чего начнём?','Чем могу помочь?','Задай любой вопрос.','Что на уме?','Готов к работе.','Я здесь.'];
+const TIER_LABELS={free:'🆓 Free',standard:'⭐ Standard',pro:'💎 Pro',group:'👑 Group+'};
+const PERSONAS={neutral:'🙂 Нейтральный',nyashka:'🧸 Няшка',villain:'😈 Злодей',robot:'🤖 Робот',sage:'🧙 Мудрец',friend:'🤝 Друг',bestie:'💛 Лучший друг',love:'💕 Любовь',psycho:'🧠 Психолог',nerd:'🤓 Ботаник',bully:'😤 Задира'};
 
-let token = localStorage.getItem('eba_token');
-let profile = null;
-let chatHistory = [];
-let imageService = 'cf';
-let authUsername = '';
-let adminUsersData = [];
-let adminUsersPage = 0;
+let token=localStorage.getItem('t');
+let profile=null;
+let imgSvc='cf';
+let authU='';
+let allUsers=[];
+let currentTool='';
 
-// ── INIT ──
-window.onload = async () => {
-  document.getElementById('welcomeQuote').textContent = QUOTES[Math.floor(Math.random()*QUOTES.length)];
-  if(token) await initApp();
-  else showAuth();
+// INIT
+window.onload=async()=>{
+  twemoji.parse(document.body,{folder:'svg',ext:'.svg'});
+  document.getElementById('wqText').textContent=QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  if(token) await boot(); else showAuth();
 };
 
-function showAuth() {
-  document.getElementById('authPage').style.display='flex';
-  document.getElementById('app').style.display='none';
-}
-
-async function initApp() {
-  document.getElementById('authPage').style.display='none';
+function showAuth(){document.getElementById('authWrap').style.display='flex';document.getElementById('app').style.display='none';}
+async function boot(){
+  document.getElementById('authWrap').style.display='none';
   document.getElementById('app').style.display='flex';
+  buildPersonas();
   await loadProfile();
-  buildPersonaGrid();
 }
 
-// ── AUTH ──
-function switchAuthTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='widget'?0:1)));
-  document.getElementById('tabWidget').style.display=tab==='widget'?'block':'none';
-  document.getElementById('tabCode').style.display=tab==='code'?'block':'none';
+// AUTH
+function authTab(t){
+  document.querySelectorAll('.at').forEach((el,i)=>el.classList.toggle('active',i===(t==='widget'?0:1)));
+  document.getElementById('tabWidget').style.display=t==='widget'?'block':'none';
+  document.getElementById('tabCode').style.display=t==='code'?'block':'none';
 }
-
-async function onTelegramAuth(user) {
-  try {
-    const r=await fetch(`${API}/api/auth/widget`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(user)});
+async function onTgAuth(u){
+  try{
+    const r=await fetch(`${API}/api/auth/widget`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(u)});
     const d=await r.json();
-    if(d.token){token=d.token;localStorage.setItem('eba_token',token);await initApp();}
-    else alert('Ошибка: '+( d.error||'неизвестная ошибка'));
-  } catch(e){alert('Ошибка подключения');}
+    if(d.token){token=d.token;localStorage.setItem('t',token);await boot();}
+    else showE('errUser',d.error||'Ошибка');
+  }catch(e){showE('errUser','Ошибка подключения');}
 }
-
-async function requestCode() {
-  const un=document.getElementById('authUsername').value.trim();
-  if(!un){showAuthError('authError','Введи username');return;}
-  authUsername=un;
+async function reqCode(){
+  const u=document.getElementById('inUser').value.trim();
+  if(!u){showE('errUser','Введи username');return;}
+  authU=u;
   const btn=event.target; btn.disabled=true; btn.textContent='Отправляю...';
-  try {
-    const r=await fetch(`${API}/api/auth/code`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:un})});
+  try{
+    const r=await fetch(`${API}/api/auth/code`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u})});
     const d=await r.json();
     if(d.ok){
-      document.getElementById('formUsername').style.display='none';
+      document.getElementById('formUser').style.display='none';
       document.getElementById('formCode').style.display='flex';
-      setTimeout(()=>document.getElementById('authCode').focus(),100);
-    } else {
-      showAuthError('authError',d.error||'Ошибка');
-      btn.disabled=false; btn.textContent='Получить код';
-    }
-  } catch(e){showAuthError('authError','Ошибка подключения');btn.disabled=false;btn.textContent='Получить код';}
+      document.getElementById('inCode').focus();
+    }else{showE('errUser',d.error||'Ошибка');btn.disabled=false;btn.textContent='Получить код';}
+  }catch{showE('errUser','Ошибка подключения');btn.disabled=false;btn.textContent='Получить код';}
 }
-
-async function verifyCode() {
-  const code=document.getElementById('authCode').value.trim();
-  if(code.length!==6){showAuthError('codeError','Код — 6 цифр');return;}
+async function doVerify(){
+  const code=document.getElementById('inCode').value.trim();
+  if(code.length!==6){showE('errCode','Код — 6 цифр');return;}
   const btn=event.target; btn.disabled=true; btn.textContent='Проверяю...';
-  try {
-    const r=await fetch(`${API}/api/auth/verify`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:authUsername,code})});
+  try{
+    const r=await fetch(`${API}/api/auth/verify`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:authU,code})});
     const d=await r.json();
-    if(d.token){token=d.token;localStorage.setItem('eba_token',token);await initApp();}
-    else {showAuthError('codeError',d.error||'Неверный код');btn.disabled=false;btn.textContent='Войти';}
-  } catch(e){showAuthError('codeError','Ошибка подключения');btn.disabled=false;btn.textContent='Войти';}
+    if(d.token){token=d.token;localStorage.setItem('t',token);await boot();}
+    else{showE('errCode',d.error||'Неверный код');btn.disabled=false;btn.textContent='Войти';}
+  }catch{showE('errCode','Ошибка подключения');btn.disabled=false;btn.textContent='Войти';}
 }
+function showE(id,msg){const e=document.getElementById(id);e.textContent=msg;e.style.display='block';setTimeout(()=>e.style.display='none',4000);}
+function doLogout(){localStorage.removeItem('t');token=null;profile=null;showAuth();}
 
-function showUsernameForm(){
-  document.getElementById('formCode').style.display='none';
-  document.getElementById('formUsername').style.display='flex';
+// PROFILE
+async function loadProfile(){
+  try{
+    const r=await ag('profile'); profile=r;
+    const n=r.first_name||'User';
+    document.getElementById('sbAvatar').textContent=n[0].toUpperCase();
+    document.getElementById('sbName').textContent=n;
+    document.getElementById('sbTier').textContent=TIER_LABELS[r.tier]||r.tier;
+    document.getElementById('pMsgs').textContent=r.msg_count;
+    document.getElementById('pImgs').textContent=r.img_count;
+    document.getElementById('pRefs').textContent=r.ref_count;
+    document.getElementById('pStars').textContent=r.ref_stars;
+    document.getElementById('pTierLabel').textContent=TIER_LABELS[r.tier]||r.tier;
+    document.getElementById('pTierUntil').textContent=r.tier_until?`До ${r.tier_until.slice(0,10)}`:'Бесплатный тариф';
+    document.getElementById('refIn').value=`https://t.me/ebaAI_offc_bot?start=ref_${r.user_id}`;
+    if(r.tier==='free') document.getElementById('proBanner').style.display='flex';
+    if(r.user_id===ADMIN_ID) document.querySelectorAll('.admin-nav').forEach(e=>e.style.display='flex');
+    document.getElementById('togSwear').checked=r.swear===1;
+    document.getElementById('selLen').value=r.answer_length||'normal';
+    if(document.getElementById('togNotif')) document.getElementById('togNotif').checked=r.weekly_notif!==false;
+    document.getElementById('proLabel').textContent=r.tier==='pro'?'✓ Pro':`(только Pro)`;
+    if(r.tier!=='pro'&&r.user_id!==ADMIN_ID) document.getElementById('personaSection').style.opacity='.55';
+    document.querySelectorAll('.persona-card').forEach(c=>c.classList.toggle('active',c.dataset.p===r.persona));
+    twemoji.parse(document.body,{folder:'svg',ext:'.svg'});
+  }catch(e){if(e.status===401)doLogout();}
 }
+async function ss(k,v){try{await ap('settings',{[k]:v});}catch{}}
+function cpRef(){navigator.clipboard?.writeText(document.getElementById('refIn').value);alert('✅ Скопировано!');}
 
-function showAuthError(id,msg){
-  const el=document.getElementById(id);
-  el.textContent=msg; el.style.display='block';
-  setTimeout(()=>el.style.display='none',4000);
-}
-
-function logout(){
-  localStorage.removeItem('eba_token');
-  token=null; profile=null; chatHistory=[];
-  showAuth();
-}
-
-// ── PROFILE ──
-async function loadProfile() {
-  try {
-    const r=await apiGet('profile');
-    profile=r;
-    const name=r.first_name||'User';
-    document.getElementById('sidebarName').textContent=name;
-    document.getElementById('sidebarTier').textContent=TIER_LABELS[r.tier]||r.tier;
-    document.getElementById('sidebarAvatar').textContent=name[0].toUpperCase();
-    document.getElementById('statMsgs').textContent=r.msg_count;
-    document.getElementById('statImgs').textContent=r.img_count;
-    document.getElementById('statRefs').textContent=r.ref_count;
-    document.getElementById('statStars').textContent=r.ref_stars;
-    document.getElementById('profileTierLabel').textContent=TIER_LABELS[r.tier]||r.tier;
-    document.getElementById('profileTierUntil').textContent=r.tier_until?`До ${r.tier_until.slice(0,10)}`:'Бесплатный тариф';
-    document.getElementById('refLink').value=`https://t.me/ebaAI_offc_bot?start=ref_${r.user_id}`;
-    if(r.tier==='free') document.getElementById('promoBanner').style.display='block';
-    if(r.user_id===ADMIN_ID) document.querySelector('.admin-only').style.display='flex';
-    loadSettings(r);
-  } catch(e){if(e.status===401){logout();}}
-}
-
-function loadSettings(r) {
-  document.getElementById('toggleSwear').checked=r.swear===1;
-  document.getElementById('selectLen').value=r.answer_length||'normal';
-  const notifEl=document.getElementById('toggleNotif');
-  if(notifEl) notifEl.checked=r.weekly_notif!==false;
-  document.querySelectorAll('.persona-card').forEach(c=>{
-    c.classList.toggle('active',c.dataset.persona===r.persona);
-  });
-  if(r.tier!=='pro'&&r.user_id!==ADMIN_ID) document.getElementById('personaCard').style.opacity='.5';
-}
-
-async function saveSetting(key,val) {
-  try {await apiPost('settings',{[key]:val});} catch(e){}
-}
-
-// ── PAGES ──
-function showPage(name) {
+// PAGES
+const pageTitles={chat:'Чат',tools:'Инструменты',image:'Картинки',games:'Игры',history:'История',profile:'Профиль',settings:'Настройки',subscribe:'Подписка',admin:'Админ'};
+function go(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const page=document.getElementById(`page-${name}`);
-  if(page) page.classList.add('active');
-  const nav=document.getElementById(`nav-${name}`);
-  if(nav) nav.classList.add('active');
-  document.getElementById('topbarTitle').textContent={
-    chat:'Чат',image:'Картинки',history:'История',
-    profile:'Профиль',settings:'Настройки',subscribe:'Подписка',admin:'Админ'
-  }[name]||name;
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById(`page-${name}`)?.classList.add('active');
+  document.getElementById(`ni-${name}`)?.classList.add('active');
+  document.getElementById('topTitle').textContent=pageTitles[name]||name;
   if(name==='history') loadHistory();
-  if(name==='admin') loadAdminStats();
+  if(name==='admin') loadAdmin();
 }
 
-// ── CHAT ──
-function handleKey(e) {
-  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}
+// CHAT
+function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();chatSend();}}
+function autoH(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function qs(t){document.getElementById('chatIn').value=t;chatSend();}
+function chatQuick(t){
+  const prompts={weather:'Погода в Москве сейчас',news:'Главные новости сегодня'};
+  qs(prompts[t]||t);
 }
-function autoResize(el) {
-  el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px';
-}
-function sendSuggestion(text) {
-  document.getElementById('msgInput').value=text;
-  sendMessage();
-}
-
-async function sendMessage() {
-  const input=document.getElementById('msgInput');
-  const text=input.value.trim();
-  if(!text) return;
-  input.value=''; input.style.height='auto';
-  document.getElementById('sendBtn').disabled=true;
-  document.getElementById('welcomeScreen')?.remove();
-
-  appendMsg('user',text);
-  const typing=appendTyping();
-
-  try {
-    const r=await apiPost('chat',{text});
-    typing.remove();
-    appendMsg('bot',r.reply||'⚠️ Пустой ответ');
-  } catch(e) {
-    typing.remove();
-    appendMsg('bot','⚠️ Ошибка: '+(e.message||'нет ответа'));
-  }
-  document.getElementById('sendBtn').disabled=false;
-  input.focus();
-}
-
-function appendMsg(role,text) {
-  const area=document.getElementById('chatArea');
-  const div=document.createElement('div');
-  div.className=`msg ${role}`;
-  const time=new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-  div.innerHTML=`
-    <div class="msg-avatar">${role==='bot'?'🤖':'👤'}</div>
-    <div class="msg-body">
-      <div class="msg-bubble">${escapeHtml(text).replace(/\n/g,'<br>')}</div>
-      <div class="msg-time">${time}</div>
-    </div>`;
-  area.appendChild(div);
-  area.scrollTop=area.scrollHeight;
-  return div;
-}
-
-function appendTyping() {
-  const area=document.getElementById('chatArea');
-  const div=document.createElement('div');
-  div.className='msg bot';
-  div.innerHTML=`<div class="msg-avatar">🤖</div><div class="msg-body"><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
-  area.appendChild(div);
-  area.scrollTop=area.scrollHeight;
-  return div;
-}
-
-function clearChat() {
-  const area=document.getElementById('chatArea');
-  area.innerHTML=`<div class="welcome" id="welcomeScreen">
-    <div class="welcome-icon">🤖</div><h2>Привет, я ebaAI</h2>
-    <p>${QUOTES[Math.floor(Math.random()*QUOTES.length)]}</p>
-    <div class="suggestions">
-      <div class="suggestion" onclick="sendSuggestion('Расскажи анекдот')">😂 Расскажи анекдот</div>
-      <div class="suggestion" onclick="sendSuggestion('Напиши стихотворение')">✍️ Напиши стихотворение</div>
-      <div class="suggestion" onclick="sendSuggestion('Какая погода в Москве?')">🌤 Погода в Москве</div>
+function chatClear(){
+  document.getElementById('chatMsgs').innerHTML=`<div class="welcome" id="welcomeBlock">
+    <div class="welcome-logo">🤖</div><h2>Привет, я ebaAI</h2>
+    <p class="welcome-quote">${QUOTES[Math.floor(Math.random()*QUOTES.length)]}</p>
+    <div class="quick-btns">
+      <div class="qb" onclick="qs('Расскажи анекдот')">😂 Анекдот</div>
+      <div class="qb" onclick="qs('Напиши стихотворение')">✍️ Стихотворение</div>
+      <div class="qb" onclick="qs('Погода в Москве')">🌤 Погода</div>
     </div></div>`;
-  chatHistory=[];
+  twemoji.parse(document.getElementById('chatMsgs'),{folder:'svg',ext:'.svg'});
+}
+async function chatSend(){
+  const inp=document.getElementById('chatIn');
+  const t=inp.value.trim(); if(!t) return;
+  inp.value=''; inp.style.height='auto';
+  document.getElementById('sendBtn').disabled=true;
+  document.getElementById('welcomeBlock')?.remove();
+  addMsg('user',t);
+  const td=addTyping();
+  try{
+    const r=await ap('chat',{text:t});
+    td.remove(); addMsg('bot',r.reply||'⚠️ Пустой ответ');
+  }catch(e){td.remove();addMsg('bot','⚠️ '+(e.message||'Ошибка'));}
+  document.getElementById('sendBtn').disabled=false;
+  inp.focus();
+}
+function addMsg(role,text){
+  const area=document.getElementById('chatMsgs');
+  const div=document.createElement('div');
+  div.className=`msg-row ${role}`;
+  const t=new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+  div.innerHTML=`<div class="msg-content">
+    <div class="msg-bubble">${esc(text).replace(/\n/g,'<br>')}</div>
+    <div class="msg-time">${t}</div></div>`;
+  area.appendChild(div);
+  area.scrollTop=area.scrollHeight;
+  twemoji.parse(div,{folder:'svg',ext:'.svg'});
+  return div;
+}
+function addTyping(){
+  const area=document.getElementById('chatMsgs');
+  const div=document.createElement('div');
+  div.className='msg-row bot';
+  div.innerHTML=`<div class="msg-content"><div class="msg-bubble"><div class="pulse-dot"><span></span><span></span><span></span></div></div></div>`;
+  area.appendChild(div); area.scrollTop=area.scrollHeight; return div;
 }
 
-// ── HISTORY ──
-async function loadHistory() {
-  const list=document.getElementById('historyList');
-  list.innerHTML='<p style="color:var(--text2);font-size:14px;">Загружаю...</p>';
-  try {
-    const r=await apiGet('history');
-    if(!r.messages?.length){list.innerHTML='<p style="color:var(--text2);font-size:14px;">История пуста</p>';return;}
-    list.innerHTML=r.messages.map(m=>`
-      <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-start;">
-        <div style="font-size:18px;flex-shrink:0;">${m.role==='user'?'👤':'🤖'}</div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex:1;font-size:13px;line-height:1.5;">
-          ${escapeHtml(m.content||'').replace(/\n/g,'<br>')}
-        </div>
-      </div>`).join('');
-  } catch(e){list.innerHTML='<p style="color:var(--danger);font-size:14px;">Ошибка загрузки</p>';}
+// SEARCH
+function openSearch(){openModal('searchModal');setTimeout(()=>document.getElementById('searchIn').focus(),100);}
+async function doSearch(){
+  const q=document.getElementById('searchIn').value.trim(); if(!q) return;
+  const out=document.getElementById('searchOut');
+  out.textContent='🔍 Ищу...';
+  try{const r=await ap('chat',{text:q});out.innerHTML=esc(r.reply||'').replace(/\n/g,'<br>');twemoji.parse(out,{folder:'svg',ext:'.svg'});}
+  catch(e){out.textContent='⚠️ '+e.message;}
 }
 
-// ── IMAGE ──
-function selectService(s) {
-  imageService=s;
-  document.getElementById('btn-cf').classList.toggle('active',s==='cf');
-  document.getElementById('btn-raphael').classList.toggle('active',s==='raphael');
+// TOOLS
+const TOOL_CONFIG={
+  weather:{title:'🌤 Погода',ph:'Название города (Москва, Лондон...)'},
+  news:{title:'📰 Новости',ph:'Тема (технологии, спорт, политика...)'},
+  search:{title:'🔍 Поиск',ph:'Что ищем?'},
+  wiki:{title:'📚 Википедия',ph:'Тема или понятие'},
+  translate:{title:'🌐 Перевод',ph:'Текст для перевода'},
+  define:{title:'📖 Толкование слова',ph:'Слово'},
+  crypto:{title:'💰 Курс крипты',ph:'btc / eth / ton / sol...'},
+  horoscope:{title:'🔮 Гороскоп',ph:'Знак (овен, телец, близнецы...)'},
+  today:{title:'📅 События дня',ph:'Нажми Выполнить'},
+  time:{title:'🕐 Время в городе',ph:'Название города'},
+  decide:{title:'🎯 Помощь с выбором',ph:'Твой вопрос (взять кофе или чай?)'},
+  trivia:{title:'🧠 Вопрос на эрудицию',ph:'Нажми Выполнить'},
+};
+function toolAction(t){
+  currentTool=t; const cfg=TOOL_CONFIG[t]||{title:t,ph:''};
+  document.getElementById('toolModalTitle').textContent=cfg.title;
+  document.getElementById('toolIn').placeholder=cfg.ph;
+  document.getElementById('toolIn').value='';
+  document.getElementById('toolModalOut').textContent='';
+  openModal('toolModal');
+  setTimeout(()=>document.getElementById('toolIn').focus(),100);
+}
+async function runTool(){
+  const v=document.getElementById('toolIn').value.trim();
+  const out=document.getElementById('toolModalOut');
+  const prompts={
+    weather:`Погода сейчас в ${v||'Москве'}: температура, описание, ощущается как`,
+    news:`Свежие новости по теме: ${v||'главные события дня'}`,
+    search:v,
+    wiki:`Расскажи кратко о "${v}" по данным Википедии`,
+    translate:`Переведи на другой язык (определи автоматически): ${v}`,
+    define:`Дай толкование и этимологию слова "${v}"`,
+    crypto:`Текущий курс ${v||'bitcoin'} в USD и RUB`,
+    horoscope:`Гороскоп для знака ${v||'овен'} на сегодня`,
+    today:`Какие интересные события, праздники и дни рождения сегодня ${new Date().toLocaleDateString('ru')}?`,
+    time:`Который сейчас час в ${v||'Москве'}?`,
+    decide:`Помоги принять решение: ${v}`,
+    trivia:`Задай один интересный вопрос на эрудицию с 3 вариантами ответа и укажи правильный`,
+  };
+  const prompt=prompts[currentTool]||v; if(!prompt) return;
+  out.innerHTML='<span style="color:var(--text2)">⏳ Думаю...</span>';
+  try{const r=await ap('chat',{text:prompt});out.innerHTML=esc(r.reply||'').replace(/\n/g,'<br>');twemoji.parse(out,{folder:'svg',ext:'.svg'});}
+  catch(e){out.textContent='⚠️ '+e.message;}
 }
 
-async function generateImage() {
-  const prompt=document.getElementById('imagePrompt').value.trim();
-  if(!prompt) return;
-  const btn=document.getElementById('genBtn');
-  btn.disabled=true; btn.textContent='⏳ Генерирую...';
-  document.getElementById('imageResult').style.display='none';
-  try {
-    const r=await apiPost('image',{prompt,service:imageService});
-    if(r.image) {
-      const res=document.getElementById('imageResult');
-      res.innerHTML=`<img src="data:image/jpeg;base64,${r.image}" alt="${escapeHtml(prompt)}">
-        <div style="padding:10px;background:var(--bg3);font-size:13px;color:var(--text2);">🎨 ${escapeHtml(prompt)}</div>`;
-      res.style.display='block';
+// GAMES
+const GAME_PROMPTS={
+  dice:()=>{const f=['⚀','⚁','⚂','⚃','⚄','⚅'];const n=Math.floor(Math.random()*6);return `🎲 Кубик: ${f[n]} **${n+1}**`;},
+  coin:()=>Math.random()<.5?'🪙 **Орёл!**':'🪙 **Решка!**',
+  card:()=>{const s=['♠️','♥️','♦️','♣️'],v=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];return `🃏 **${v[Math.floor(Math.random()*13)]+s[Math.floor(Math.random()*4)]}**`;},
+  slot:()=>{const e=['🍒','🍋','🍊','🍇','⭐','💎','7️⃣','🔔'];const r=()=>e[Math.floor(Math.random()*8)];const s=[r(),r(),r()];return `🎰 ${s.join(' | ')}\n${s[0]===s[1]&&s[1]===s[2]?'🎉 ДЖЕКПОТ!':s[0]===s[1]||s[1]===s[2]?'👍 Почти!':'😔 Не повезло'}`;},
+  rps:()=>{const c=['🪨 Камень','✂️ Ножницы','📄 Бумага'];return `🤖 Бот выбрал: **${c[Math.floor(Math.random()*3)]}**\nА ты?`;},
+  riddle:'Придумай одну интересную загадку на русском. Формат:\n🧩 Загадка: ...\n\n💡 Ответ: ...',
+  tongue:'Придумай смешную скороговорку на русском.',
+  fact:'Расскажи один неожиданный и интересный факт. 2-3 предложения.',
+  joke:'Расскажи короткий смешной анекдот на русском.',
+  predict:'Дай смешное предсказание на сегодня. 2-3 предложения.',
+  iq:'Задай каверзный вопрос на IQ с 3 вариантами. Укажи правильный в конце.',
+  tod:'Дай вопрос "Правда или действие" на русском — либо интересный вопрос, либо смешное задание.',
+  flag:'Назови случайную страну, напиши её флаг эмодзи и дай 4 варианта ответа кто это.',
+  quote:'Дай вдохновляющую цитату с именем автора.',
+  challenge:'Придумай один интересный ежедневный челлендж для саморазвития.',
+};
+async function playGame(g){
+  const out=document.getElementById('gameOut');
+  out.style.display='block';
+  const prompt=GAME_PROMPTS[g];
+  if(typeof prompt==='function'){out.innerHTML=esc(prompt()).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');twemoji.parse(out,{folder:'svg',ext:'.svg'});return;}
+  out.innerHTML='<span style="color:var(--text2)">⏳ Генерирую...</span>';
+  try{const r=await ap('chat',{text:prompt});out.innerHTML=esc(r.reply||'').replace(/\n/g,'<br>');twemoji.parse(out,{folder:'svg',ext:'.svg'});}
+  catch(e){out.textContent='⚠️ '+e.message;}
+}
+
+// IMAGE
+function selSvc(s){imgSvc=s;document.getElementById('svcCF').classList.toggle('active',s==='cf');document.getElementById('svcR').classList.toggle('active',s==='raphael');}
+async function doGenImg(){
+  const p=document.getElementById('imgPrompt').value.trim(); if(!p) return;
+  const btn=document.getElementById('genBtn'); btn.disabled=true; btn.textContent='⏳ Генерирую...';
+  document.getElementById('imgOut').style.display='none';
+  try{
+    const r=await ap('image',{prompt:p,service:imgSvc});
+    if(r.image){
+      const o=document.getElementById('imgOut');
+      o.innerHTML=`<img src="data:image/jpeg;base64,${r.image}" alt="${esc(p)}"><div class="img-cap">🎨 ${esc(p)}</div>`;
+      o.style.display='block';
     }
-  } catch(e){alert('Ошибка генерации: '+(e.message||''));}
+  }catch(e){alert('⚠️ '+e.message);}
   btn.disabled=false; btn.textContent='✨ Сгенерировать';
 }
 
-// ── SETTINGS ──
-function buildPersonaGrid() {
-  const grid=document.getElementById('personaGrid');
-  grid.innerHTML=Object.entries(PERSONAS).map(([k,v])=>{
-    const icon=v.split(' ')[0]; const name=v.split(' ').slice(1).join(' ');
-    return `<div class="persona-card" data-persona="${k}" onclick="selectPersona('${k}')">
-      <div class="persona-icon">${icon}</div>
-      <div class="persona-name">${name}</div>
-    </div>`;
+// HISTORY
+async function loadHistory(){
+  const l=document.getElementById('histList');
+  l.innerHTML='<p style="color:var(--text2);font-size:14px;">Загружаю...</p>';
+  try{
+    const r=await ag('history');
+    if(!r.messages?.length){l.innerHTML='<p style="color:var(--text2);font-size:14px;">История пуста</p>';return;}
+    l.innerHTML=r.messages.map(m=>`
+      <div class="hist-msg">
+        <div class="hist-role">${m.role==='user'?'👤':'🤖'}</div>
+        <div class="hist-text">${esc(m.content||'').replace(/\n/g,'<br>')}</div>
+      </div>`).join('');
+    twemoji.parse(l,{folder:'svg',ext:'.svg'});
+  }catch{l.innerHTML='<p style="color:var(--danger);font-size:13px;">Ошибка загрузки</p>';}
+}
+
+// PERSONAS
+function buildPersonas(){
+  const g=document.getElementById('personaGrid');
+  g.innerHTML=Object.entries(PERSONAS).map(([k,v])=>{
+    const [e,...rest]=v.split(' '); const n=rest.join(' ');
+    return `<div class="persona-card" data-p="${k}" onclick="selPersona('${k}')"><div class="persona-e">${e}</div><div class="persona-n">${n}</div></div>`;
   }).join('');
 }
-
-async function selectPersona(key) {
-  if(profile?.tier!=='pro'&&profile?.user_id!==ADMIN_ID){openModal('tiersModal');return;}
-  await saveSetting('persona',key);
-  document.querySelectorAll('.persona-card').forEach(c=>c.classList.toggle('active',c.dataset.persona===key));
+async function selPersona(k){
+  if(profile?.tier!=='pro'&&profile?.user_id!==ADMIN_ID){openModal('tierModal');return;}
+  await ss('persona',k);
+  document.querySelectorAll('.persona-card').forEach(c=>c.classList.toggle('active',c.dataset.p===k));
 }
 
-// ── ADMIN ──
-async function loadAdminStats() {
-  try {
-    const [stats,errs,users]=await Promise.all([apiGet('admin/stats'),apiGet('admin/errors'),apiGet('admin/users')]);
-    document.getElementById('adminUsers').textContent=stats.total_users;
-    document.getElementById('adminToday').textContent=stats.new_today;
-    document.getElementById('adminMsgs').textContent=stats.total_msgs||0;
-    document.getElementById('adminTiers').innerHTML=stats.subs.map(s=>`
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
-        <span>${TIER_LABELS[s.tier]||s.tier}</span><strong>${s.c}</strong>
-      </div>`).join('');
-    if(errs.errors?.length){
-      document.getElementById('adminErrors').innerHTML=errs.errors.slice(0,10).map(e=>`
-        <div style="padding:8px;background:rgba(239,68,68,.08);border-radius:6px;margin-bottom:6px;">
-          <div style="font-size:11px;color:var(--text2);">${e.ts?.slice(0,16)} • ${e.context}</div>
-          <div>${escapeHtml(e.message||'').slice(0,200)}</div>
-        </div>`).join('');
-    } else document.getElementById('adminErrors').innerHTML='<p style="color:var(--success);font-size:13px;">✅ Ошибок нет</p>';
-    adminUsersData=users.users||[];
-    renderUsersTable();
-  } catch(e){}
+// ADMIN
+async function loadAdmin(){
+  try{
+    const [s,u,e]=await Promise.all([ag('admin/stats'),ag('admin/users'),ag('admin/errors')]);
+    document.getElementById('aUsers').textContent=s.total_users;
+    document.getElementById('aToday').textContent=s.new_today;
+    document.getElementById('aMsgs').textContent=s.total_msgs||0;
+    allUsers=u.users||[]; renderUsers();
+    loadErrors(e);
+  }catch{}
 }
-
-async function loadAdminErrors(){
-  try{const r=await apiGet('admin/errors');
-    document.getElementById('adminErrors').innerHTML=r.errors.map(e=>`
-      <div style="padding:8px;background:rgba(239,68,68,.08);border-radius:6px;margin-bottom:6px;">
-        <div style="font-size:11px;color:var(--text2);">${e.ts?.slice(0,16)} • ${e.context}</div>
-        <div>${escapeHtml(e.message||'').slice(0,200)}</div>
-      </div>`).join('')||'✅ Ошибок нет';
-  }catch(e){}
-}
-
-function filterUsers(){
-  const q=document.getElementById('userSearch').value.toLowerCase();
-  renderUsersTable(q);
-}
-
-function renderUsersTable(filter=''){
-  const data=filter?adminUsersData.filter(u=>(u.first_name||'').toLowerCase().includes(filter)||(u.username||'').toLowerCase().includes(filter)):adminUsersData;
-  const tbody=document.getElementById('usersTable');
-  tbody.innerHTML=data.slice(0,50).map(u=>`
+function renderUsers(f=''){
+  const d=f?allUsers.filter(u=>(u.first_name||'').toLowerCase().includes(f)||(u.username||'').toLowerCase().includes(f)):allUsers;
+  const cls={free:'bf',standard:'bs',pro:'bp',group:'bg'};
+  document.getElementById('usersT').innerHTML=d.slice(0,60).map(u=>`
     <tr>
-      <td>${escapeHtml(u.first_name||'?')}</td>
+      <td>${esc(u.first_name||'?')}</td>
       <td style="color:var(--text2);">${u.username?'@'+u.username:u.user_id}</td>
-      <td><span class="badge badge-${u.tier}">${TIER_LABELS[u.tier]||u.tier}</span></td>
-      <td style="color:var(--text2);">${u.created_at?.slice(0,10)||'?'}</td>
+      <td><span class="badge ${cls[u.tier]||'bf'}">${TIER_LABELS[u.tier]||u.tier}</span></td>
+      <td style="color:var(--text2);">${(u.created_at||'?').slice(0,10)}</td>
     </tr>`).join('');
 }
-
-async function sendBroadcast(){
-  const text=document.getElementById('broadcastText').value.trim();
-  const time=document.getElementById('broadcastTime').value;
-  if(!text) return alert('Введи текст');
-  const body={text};
-  if(time) body.fire_at=new Date(time).toISOString();
-  try {
-    const r=await apiPost('admin/broadcast',body);
-    alert(r.scheduled?`✅ Запланировано на ${time}`:`✅ Отправлено ${r.sent} пользователям`);
-    document.getElementById('broadcastText').value='';
-  } catch(e){alert('Ошибка: '+e.message);}
+function filterU(){renderUsers(document.getElementById('userQ').value.toLowerCase());}
+async function loadErrors(d){
+  if(!d) try{d=await ag('admin/errors');}catch{return;}
+  const el=document.getElementById('errList');
+  if(!d.errors?.length){el.innerHTML='<p style="color:var(--success);">✅ Ошибок нет</p>';return;}
+  el.innerHTML=d.errors.slice(0,15).map(e=>`
+    <div style="padding:8px 10px;background:rgba(239,68,68,.07);border-radius:8px;margin-bottom:6px;">
+      <div style="font-size:11px;color:var(--text3);">${(e.ts||'').slice(0,16)} · ${e.context}</div>
+      <div style="font-size:13px;margin-top:3px;">${esc(e.message||'').slice(0,180)}</div>
+    </div>`).join('');
+}
+async function doBroadcast(){
+  const t=document.getElementById('bcText').value.trim();
+  if(!t){alert('Введи текст');return;}
+  const dt=document.getElementById('bcTime').value;
+  const body={text:t};
+  if(dt) body.fire_at=new Date(dt).toISOString();
+  try{const r=await ap('admin/broadcast',body);alert(r.scheduled?`✅ Запланировано`:`✅ Отправлено ${r.sent} пользователям`);}
+  catch(e){alert('⚠️ '+e.message);}
 }
 
-// ── MODAL ──
+// MODALS
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
-function closeModalOutside(e,id){if(e.target.id===id)closeModal(id);}
+function closeOut(e,id){if(e.target.id===id)closeModal(id);}
 
-// ── HELPERS ──
-function copyRef(){
-  navigator.clipboard.writeText(document.getElementById('refLink').value);
-  alert('✅ Скопировано!');
+// API
+async function ag(p){
+  const r=await fetch(`${API}/api/${p}`,{headers:{Authorization:`Bearer ${token}`}});
+  if(r.status===401){doLogout();throw Object.assign(new Error('Unauthorized'),{status:401});}
+  const d=await r.json(); if(!r.ok) throw new Error(d.error||r.statusText); return d;
 }
-function escapeHtml(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-
-async function apiGet(path){
-  const r=await fetch(`${API}/api/${path}`,{headers:{'Authorization':`Bearer ${token}`}});
-  if(r.status===401){logout();throw Object.assign(new Error('Unauthorized'),{status:401});}
-  const d=await r.json();
-  if(!r.ok) throw new Error(d.error||r.statusText);
-  return d;
+async function ap(p,b){
+  const r=await fetch(`${API}/api/${p}`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(b)});
+  if(r.status===401){doLogout();throw Object.assign(new Error('Unauthorized'),{status:401});}
+  const d=await r.json(); if(!r.ok) throw new Error(d.error||r.statusText); return d;
 }
-async function apiPost(path,body){
-  const r=await fetch(`${API}/api/${path}`,{method:'POST',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(r.status===401){logout();throw Object.assign(new Error('Unauthorized'),{status:401});}
-  const d=await r.json();
-  if(!r.ok) throw new Error(d.error||r.statusText);
-  return d;
-}
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 </script>
 </body>
 </html>
+
