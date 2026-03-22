@@ -134,7 +134,7 @@ textarea#inp::placeholder{color:var(--t3);}
 .send{width:29px;height:29px;background:var(--accent);border:none;border-radius:9px;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;}
 .send:hover{background:#5a52e0;}.send:disabled{opacity:.3;}
 
-.toolbar{display:flex;align-items:center;gap:3px;padding:1px 7px 8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
+.toolbar{display:flex;align-items:center;gap:3px;padding:1px 7px 8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;position:relative;}
 .tb{display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:16px;border:1px solid transparent;background:transparent;color:var(--t2);font-size:11.5px;font-family:inherit;white-space:nowrap;transition:.15s;}
 .tb:hover{background:var(--s2);color:var(--t1);border-color:var(--b1);}
 .tb.on{background:var(--ac2);color:var(--accent);border-color:rgba(108,99,255,.25);}
@@ -143,8 +143,9 @@ textarea#inp::placeholder{color:var(--t3);}
 
 /* dropdowns */
 .dw{position:relative;}
-.drop{position:absolute;bottom:calc(100% + 5px);left:0;background:var(--s1);border:1px solid var(--b2);border-radius:11px;padding:5px;min-width:185px;display:none;z-index:50;box-shadow:0 8px 28px rgba(0,0,0,.4);}
+.drop{position:absolute;bottom:calc(100% + 5px);left:0;background:var(--s1);border:1px solid var(--b2);border-radius:11px;padding:5px;min-width:185px;display:none;z-index:100;box-shadow:0 8px 28px rgba(0,0,0,.5);}
 .drop.r{left:auto;right:0;}
+.drop.open{display:block;}
 .drop.open{display:block;}
 .dl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;padding:4px 8px 2px;}
 .di{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;font-size:12.5px;color:var(--t2);transition:.1s;}
@@ -899,6 +900,7 @@ function initWelcome(){
 }
 function buildStylePicker(){
   const dp=document.getElementById('styleDrop');
+  if(!dp||dp.children.length>0) return; // уже построен
   let addedPro=false;
   const freeLabel=document.createElement('div');freeLabel.className='dl';freeLabel.textContent='Бесплатно';dp.appendChild(freeLabel);
   Object.entries(PERSONAS).forEach(([key,[label,isPro]])=>{
