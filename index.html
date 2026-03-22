@@ -566,8 +566,8 @@ async function boot(){
   document.getElementById('app').style.removeProperty('display');
   document.getElementById('app').style.display='flex';
   loadStorage();
-  renderChatList();
-  if(!curChatId) newChat();
+  await loadChats();
+  if(!curChatId||!chats.find(x=>x.id===curChatId)) await newChat();
   await loadProfile();
   initWelcome();
   document.getElementById('inp').focus();
@@ -677,29 +677,58 @@ function closeProModal(){document.getElementById('proModal').classList.remove('o
 
 /* ── CHATS ── */
 function loadStorage(){
-  try{chats=JSON.parse(localStorage.getItem('eba_chats')||'[]');}catch{chats=[];}
   try{folders=JSON.parse(localStorage.getItem('eba_folders')||'[]');}catch{folders=[];}
   curChatId=localStorage.getItem('eba_cur')||null;
 }
-function saveChats(){localStorage.setItem('eba_chats',JSON.stringify(chats));}
 function saveFolders(){localStorage.setItem('eba_folders',JSON.stringify(folders));}
 
-function newChat(){
+async function loadChats(){
+  try{
+    const r=await apig('chats');
+    chats=r.chats.map(ch=>({...ch,msgs:[],loaded:false}));
+    renderChatList();
+  }catch(e){
+    // Fallback на localStorage
+    try{chats=JSON.parse(localStorage.getItem('eba_chats')||'[]');}catch{chats=[];}
+    renderChatList();
+  }
+}
+
+async function newChat(){
   const id='c'+Date.now();
-  chats.unshift({id,name:'Новый чат',preview:'',pinned:false,folder:null,msgs:[]});
-  saveChats();selectChat(id);renderChatList();
+  const chat={id,name:'Новый чат',preview:'',pinned:false,folder:null,msgs:[],loaded:true};
+  chats.unshift(chat);
+  // Создаём на сервере
+  try{await apiPost('chats',{id,name:'Новый чат'});}catch{}
+  selectChat(id);renderChatList();
 }
-function selectChat(id){
+
+async function selectChat(id){
   curChatId=id;localStorage.setItem('eba_cur',id);
-  const c=chats.find(x=>x.id===id);
-  topTitle.textContent=c?.name||'Чат';
-  renderMessages(c?.msgs||[]);
-  renderChatList();
+  const chat=chats.find(x=>x.id===id);
+  topTitle.textContent=chat?.name||'Чат';
   closeSb();
+  // Если сообщения ещё не загружены — грузим с сервера
+  if(chat&&!chat.loaded){
+    renderMessages([],true); // показываем спиннер
+    try{
+      const r=await apig('chats/'+id);
+      chat.msgs=r.messages.map(m=>({role:m.role,text:m.content,time:m.created_at?.slice(11,16)||''}));
+      chat.loaded=true;
+    }catch{
+      chat.msgs=[];chat.loaded=true;
+    }
+  }
+  renderMessages(chat?.msgs||[]);
+  renderChatList();
 }
-function renderMessages(msgs){
+function renderMessages(msgs,loading=false){
   const el=msgs;
   msgs_el=document.getElementById('msgs');
+  if(loading){
+    msgs_el.innerHTML=`<div class="mw" style="display:flex;justify-content:center;padding:40px 0"><div class="typing"><div class="typing-dot"></div></div></div>`;
+    return;
+  }
   if(!msgs.length){
     msgs_el.innerHTML=`<div class="mw"><div class="welcome"><div class="wl-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg></div><div class="wl-h">Привет, я ebaAI</div><div class="wl-s">Интеллектуальный ассистент</div><div class="sugs"><div class="sg" onclick="qs('Расскажи анекдот')">Анекдот</div><div class="sg" onclick="qs('Погода в Москве')">Погода</div><div class="sg" onclick="qs('Интересный факт')">Факт</div><div class="sg" onclick="openImgModal()">Изображение</div></div></div></div>`;
   } else {
@@ -722,9 +751,27 @@ function ci(c){return`<div class="ci${c.id===curChatId?' active':''}${c.pinned?'
 /* ── CONTEXT MENU ── */
 function openCtx(e,id){e.preventDefault();ctxChatId=id;const c=chats.find(x=>x.id===id);ctxPinLbl.textContent=c?.pinned?'Открепить':'Закрепить';ctxFolderI.style.display=folders.length?'':'none';ctx.style.left=Math.min(e.clientX,window.innerWidth-170)+'px';ctx.style.top=Math.min(e.clientY,window.innerHeight-150)+'px';ctx.classList.add('open');}
 document.addEventListener('click',()=>ctx.classList.remove('open'));
-function ctxPin(){const c=chats.find(x=>x.id===ctxChatId);if(c){c.pinned=!c.pinned;saveChats();renderChatList();}}
-function ctxRename(){const c=chats.find(x=>x.id===ctxChatId);if(!c)return;const n=prompt('Новое название:',c.name);if(n){c.name=n;saveChats();renderChatList();if(curChatId===c.id)topTitle.textContent=n;}}
-function ctxDelete(){if(!confirm('Удалить чат?'))return;chats=chats.filter(x=>x.id!==ctxChatId);saveChats();if(curChatId===ctxChatId){chats.length?selectChat(chats[0].id):newChat();}renderChatList();}
+async function ctxPin(){
+  const chat=chats.find(x=>x.id===ctxChatId);if(!chat)return;
+  chat.pinned=!chat.pinned;renderChatList();
+  try{await fetch(`${API}/api/chats/${ctxChatId}`,{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({pinned:chat.pinned})});}catch{}
+}
+async function ctxRename(){
+  const chat=chats.find(x=>x.id===ctxChatId);if(!chat)return;
+  const n=prompt('Новое название:',chat.name);
+  if(!n)return;
+  chat.name=n;renderChatList();
+  if(curChatId===chat.id)topTitle.textContent=n;
+  try{await fetch(`${API}/api/chats/${ctxChatId}`,{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({name:n})});}catch{}
+}
+async function ctxDelete(){
+  if(!confirm('Удалить чат?'))return;
+  const id=ctxChatId;
+  chats=chats.filter(x=>x.id!==id);
+  try{await fetch(`${API}/api/chats/${id}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`}});}catch{}
+  if(curChatId===id){chats.length?await selectChat(chats[0].id):await newChat();}
+  renderChatList();
+}
 function ctxFolder(){if(!folders.length)return;const n=folders.map((f,i)=>`${i+1}. ${f.name}`).join('\n');const i=parseInt(prompt(`Папка:\n${n}\n0 — убрать`))-1;const c=chats.find(x=>x.id===ctxChatId);if(c){c.folder=i>=0&&folders[i]?folders[i].id:null;saveChats();renderChatList();}}
 
 /* ── FOLDERS ── */
@@ -754,12 +801,21 @@ async function sendMsg(){
   document.getElementById('welcomeBlock')?.remove();
   const chat=chats.find(c=>c.id===curChatId);
   const time=new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-  if(chat){chat.msgs.push({role:'user',text,time});chat.preview=text.slice(0,40);if(chat.name==='Новый чат'&&text.length>3)chat.name=text.slice(0,26)+(text.length>26?'…':'');saveChats();}
+  if(chat){
+    chat.msgs.push({role:'user',text,time});
+    chat.preview=text.slice(0,40);
+    if(chat.name==='Новый чат'&&text.length>3){
+      chat.name=text.slice(0,26)+(text.length>26?'…':'');
+      topTitle.textContent=chat.name;
+      try{await apiPost('chats/'+curChatId+'/messages',{role:'user',content:text});
+      await fetch(`${API}/api/chats/${curChatId}`,{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({name:chat.name})});}catch{}
+    }
+  }
   addMsg('user',text,time);topTitle.textContent=chat?.name||'Чат';renderChatList();
   const td=addTyping();
-  try{const r=await apiPost('chat',{text,forceSearch:searchOn});td.remove();
+  try{const r=await apiPost('chat',{text,chatId:curChatId,forceSearch:searchOn});td.remove();
   const reply=r.reply||'⚠️ Пустой ответ';const t2=new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-  if(chat){chat.msgs.push({role:'bot',text:reply,time:t2});saveChats();}
+  if(chat){chat.msgs.push({role:'bot',text:reply,time:t2});}
   addMsg('bot',reply,t2);}
   catch(e){td.remove();addMsg('bot','⚠️ '+(e.message||'Ошибка'),time);}
   sendBtn.disabled=false;inp.focus();
