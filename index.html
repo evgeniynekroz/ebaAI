@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>ebaAI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&display=swap');
 
@@ -90,14 +91,35 @@ a{text-decoration:none;}
 .sg{background:var(--s1);border:1px solid var(--b2);padding:6px 12px;border-radius:18px;font-size:12px;color:var(--t2);display:flex;align-items:center;gap:5px;transition:.15s;}
 .sg:hover{border-color:rgba(108,99,255,.4);color:var(--t1);background:var(--ac2);}
 
-.msg{display:flex;flex-direction:column;margin-bottom:14px;}
+.msg{display:flex;flex-direction:column;margin-bottom:18px;}
 .msg.user{align-items:flex-end;}
-.msg.bot{align-items:flex-start;}
-.mb{max-width:84%;padding:10px 14px;border-radius:var(--r);font-size:13px;line-height:1.65;word-break:break-word;}
-.msg.user .mb{background:var(--usr);border:1px solid var(--b2);border-bottom-right-radius:4px;}
-.msg.bot .mb{background:var(--s1);border:1px solid var(--b1);border-bottom-left-radius:4px;}
-.mt{font-size:10px;color:var(--t3);margin-top:3px;padding:0 2px;}
-.typing{display:flex;align-items:center;padding:4px 0;}
+.msg.bot{align-items:flex-start;width:100%;}
+/* Пользователь — прямоугольный пузырь */
+.mb-user{display:inline-block;max-width:78%;padding:10px 14px;border-radius:10px;font-size:13.5px;line-height:1.65;word-break:break-word;background:var(--usr);border:1px solid var(--b2);}
+/* ИИ — на весь экран без пузыря */
+.mb-bot{width:100%;font-size:13.5px;line-height:1.75;word-break:break-word;color:var(--t1);}
+.mb-bot p{margin-bottom:10px;}
+.mb-bot p:last-child{margin-bottom:0;}
+.mb-bot h1,.mb-bot h2,.mb-bot h3{font-weight:700;margin:16px 0 8px;letter-spacing:-.3px;}
+.mb-bot h1{font-size:18px;}.mb-bot h2{font-size:16px;}.mb-bot h3{font-size:14.5px;}
+.mb-bot ul,.mb-bot ol{padding-left:20px;margin-bottom:10px;}
+.mb-bot li{margin-bottom:4px;}
+.mb-bot code{background:var(--s2);border:1px solid var(--b2);border-radius:5px;padding:1px 6px;font-size:12.5px;font-family:monospace;}
+.mb-bot pre{background:var(--s2);border:1px solid var(--b2);border-radius:10px;padding:14px;overflow-x:auto;margin-bottom:10px;}
+.mb-bot pre code{background:none;border:none;padding:0;font-size:12.5px;}
+.mb-bot blockquote{border-left:3px solid var(--accent);padding-left:12px;color:var(--t2);margin:10px 0;}
+.mb-bot strong{font-weight:700;color:var(--t1);}
+.mb-bot em{font-style:italic;color:var(--t2);}
+.mb-bot hr{border:none;border-top:1px solid var(--b1);margin:14px 0;}
+/* Таблицы */
+.mb-bot table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px;}
+.mb-bot th{background:var(--s2);padding:8px 12px;text-align:left;font-weight:600;border:1px solid var(--b2);}
+.mb-bot td{padding:7px 12px;border:1px solid var(--b1);}
+.mb-bot tr:nth-child(even) td{background:var(--s2);}
+.mt{font-size:10px;color:var(--t3);margin-top:4px;padding:0 2px;}
+/* Анимация — без пузыря */
+.typing-wrap{padding:4px 0;}
+.typing{display:flex;align-items:center;padding:8px 0;}
 .typing-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 1.4s ease-in-out infinite;opacity:.7;}
 @keyframes pulse{0%,100%{transform:scale(1);opacity:.4;}50%{transform:scale(1.4);opacity:1;}}
 
@@ -354,24 +376,11 @@ textarea#inp::placeholder{color:var(--t3);}
           </button>
         </div>
         <div class="toolbar">
-          <button class="tb" id="srchTb" onclick="toggleSearch()">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            Поиск
-          </button>
-          <div class="tb-sep"></div>
-          <div class="dw" id="styleW">
-            <button class="tb" onclick="toggleDrop('styleDrop')">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
-              <span id="styleLbl">Нейтральный</span>
-            </button>
-            <div class="drop" id="styleDrop"></div>
-          </div>
-          <div class="tb-gap"></div>
           <div class="dw" id="plusW">
             <button class="tb" onclick="toggleDrop('plusDrop')" title="Ещё">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
             </button>
-            <div class="drop r" id="plusDrop">
+            <div class="drop" id="plusDrop">
               <div class="di" onclick="openImgModal();closeDrop('plusDrop')">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
                 Генерация изображения
@@ -390,6 +399,18 @@ textarea#inp::placeholder{color:var(--t3);}
                 Курс криптовалюты
               </div>
             </div>
+          </div>
+          <div class="tb-sep"></div>
+          <button class="tb" id="srchTb" onclick="toggleSearch()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Поиск
+          </button>
+          <div class="dw" id="styleW">
+            <button class="tb" onclick="toggleDrop('styleDrop')">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+              <span id="styleLbl">Нейтральный</span>
+            </button>
+            <div class="drop r" id="styleDrop"></div>
           </div>
         </div>
       </div>
@@ -555,10 +576,10 @@ let curFolder='all';
 let curTheme=localStorage.getItem('eba_theme')||'light-1';
 
 window.onload=()=>{
+  if(typeof marked!=='undefined'){marked.setOptions({breaks:true,gfm:true});}
   applyTheme(curTheme);
-  buildStylePicker();
   buildThemePicker();
-  if(token) boot();
+  if(token) boot(); else buildStylePicker();
 };
 
 async function boot(){
@@ -566,6 +587,7 @@ async function boot(){
   document.getElementById('app').style.removeProperty('display');
   document.getElementById('app').style.display='flex';
   loadStorage();
+  buildStylePicker();
   await loadChats();
   if(!curChatId||!chats.find(x=>x.id===curChatId)) await newChat();
   await loadProfile();
@@ -730,9 +752,9 @@ function renderMessages(msgs,loading=false){
     return;
   }
   if(!msgs.length){
-    msgs_el.innerHTML=`<div class="mw"><div class="welcome"><div class="wl-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg></div><div class="wl-h">Привет, я ebaAI</div><div class="wl-s">Интеллектуальный ассистент</div><div class="sugs"><div class="sg" onclick="qs('Расскажи анекдот')">Анекдот</div><div class="sg" onclick="qs('Погода в Москве')">Погода</div><div class="sg" onclick="qs('Интересный факт')">Факт</div><div class="sg" onclick="openImgModal()">Изображение</div></div></div></div>`;
+    msgs_el.innerHTML=`<div class="mw"><div class="welcome"><div class="wl-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg></div><div class="wl-h">Привет, я ebaAI</div><div class="wl-s">История чатов синхронизируется между устройствами</div><div class="sugs"><div class="sg" onclick="qs('Расскажи анекдот')">Анекдот</div><div class="sg" onclick="qs('Погода в Москве')">Погода</div><div class="sg" onclick="qs('Интересный факт')">Факт</div><div class="sg" onclick="openImgModal()">Изображение</div></div></div></div>`;
   } else {
-    msgs_el.innerHTML=msgs.map(m=>`<div class="mw"><div class="msg ${m.role}"><div class="mb">${esc(m.text).replace(/\n/g,'<br>')}</div><div class="mt">${m.time}</div></div></div>`).join('');
+    msgs_el.innerHTML=msgs.map(m=>m.role==='user'?`<div class="mw"><div class="msg user"><div class="mb-user">${esc(m.text).replace(/\n/g,'<br>')}</div><div class="mt">${m.time}</div></div></div>`:`<div class="mw"><div class="msg bot"><div class="mb-bot">${renderMD(m.text)}</div><div class="mt">${m.time}</div></div></div>`).join('');
     msgs_el.scrollTop=msgs_el.scrollHeight;
   }
 }
@@ -820,15 +842,23 @@ async function sendMsg(){
   catch(e){td.remove();addMsg('bot','⚠️ '+(e.message||'Ошибка'),time);}
   sendBtn.disabled=false;inp.focus();
 }
+function renderMD(text){
+  if(typeof marked==='undefined') return esc(text).replace(/\n/g,'<br>');
+  try{return marked.parse(text);}catch{return esc(text).replace(/\n/g,'<br>');}
+}
 function addMsg(role,text,time){
   const el=document.getElementById('msgs');
   const w=document.createElement('div');w.className='mw';
-  w.innerHTML=`<div class="msg ${role}"><div class="mb">${esc(text).replace(/\n/g,'<br>')}</div><div class="mt">${time}</div></div>`;
+  if(role==='user'){
+    w.innerHTML=`<div class="msg user"><div class="mb-user">${esc(text).replace(/\n/g,'<br>')}</div><div class="mt">${time}</div></div>`;
+  } else {
+    w.innerHTML=`<div class="msg bot"><div class="mb-bot">${renderMD(text)}</div><div class="mt">${time}</div></div>`;
+  }
   el.appendChild(w);el.scrollTop=el.scrollHeight;
 }
 function addTyping(){
   const el=document.getElementById('msgs');const w=document.createElement('div');w.className='mw';
-  w.innerHTML=`<div class="msg bot"><div class="mb"><div class="typing"><div class="typing-dot"></div></div></div></div>`;
+  w.innerHTML=`<div class="msg bot"><div class="typing"><div class="typing-dot"></div></div></div>`;
   el.appendChild(w);el.scrollTop=el.scrollHeight;return w;
 }
 
