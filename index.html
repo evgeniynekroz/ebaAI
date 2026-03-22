@@ -22,8 +22,8 @@
 :root{--accent:#6c63ff;--ac2:rgba(108,99,255,.14);--danger:#e05555;--r:14px;}
 
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;overflow:hidden;}
-body{font-family:'Onest',-apple-system,sans-serif;background:var(--bg);color:var(--t1);display:flex;height:100vh;transition:background .2s,color .2s;}
+html,body{height:100%;height:100dvh;overflow:hidden;}
+body{font-family:'Onest',-apple-system,sans-serif;background:var(--bg);color:var(--t1);display:flex;height:100vh;height:100dvh;transition:background .2s,color .2s;}
 button{font-family:inherit;cursor:pointer;}
 a{text-decoration:none;}
 ::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
@@ -97,13 +97,12 @@ a{text-decoration:none;}
 .msg.user .mb{background:var(--usr);border:1px solid var(--b2);border-bottom-right-radius:4px;}
 .msg.bot .mb{background:var(--s1);border:1px solid var(--b1);border-bottom-left-radius:4px;}
 .mt{font-size:10px;color:var(--t3);margin-top:3px;padding:0 2px;}
-.typing{display:flex;gap:4px;padding:3px 0;}
-.typing span{width:5px;height:5px;background:var(--t3);border-radius:50%;animation:ty .9s ease-in-out infinite;}
-.typing span:nth-child(2){animation-delay:.15s;}.typing span:nth-child(3){animation-delay:.3s;}
-@keyframes ty{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-4px);opacity:1;}}
+.typing{display:flex;align-items:center;padding:4px 0;}
+.typing-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 1.4s ease-in-out infinite;opacity:.7;}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.4;}50%{transform:scale(1.4);opacity:1;}}
 
 /* input */
-.inp-area{padding:8px 16px 12px;flex-shrink:0;}
+.inp-area{padding:8px 16px 12px;padding-bottom:max(12px,env(safe-area-inset-bottom));flex-shrink:0;}
 .inp-w{max-width:680px;margin:0 auto;}
 .inp-box{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);transition:.2s;}
 .inp-box:focus-within{border-color:rgba(108,99,255,.45);box-shadow:0 0 0 3px rgba(108,99,255,.07);}
@@ -113,7 +112,7 @@ textarea#inp::placeholder{color:var(--t3);}
 .send{width:29px;height:29px;background:var(--accent);border:none;border-radius:9px;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;}
 .send:hover{background:#5a52e0;}.send:disabled{opacity:.3;}
 
-.toolbar{display:flex;align-items:center;gap:3px;padding:1px 7px 8px;}
+.toolbar{display:flex;align-items:center;gap:3px;padding:1px 7px 8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
 .tb{display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:16px;border:1px solid transparent;background:transparent;color:var(--t2);font-size:11.5px;font-family:inherit;white-space:nowrap;transition:.15s;}
 .tb:hover{background:var(--s2);color:var(--t1);border-color:var(--b1);}
 .tb.on{background:var(--ac2);color:var(--accent);border-color:rgba(108,99,255,.25);}
@@ -332,24 +331,15 @@ textarea#inp::placeholder{color:var(--t3);}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
     <div class="tb-title" id="topTitle">Новый чат</div>
-    <button class="pro-pill" id="proPill" onclick="openProModal()">Pro</button>
+    <button class="pro-pill" id="proPill" onclick="openProModal()" style="display:block">Pro</button>
   </div>
 
   <div class="msgs" id="msgs">
     <div class="mw" id="welcomeWrap">
       <div class="welcome" id="welcomeBlock">
-        <div class="wl-ico">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
-        </div>
-        <div class="wl-h">Привет, я ebaAI</div>
-        <div class="wl-s">Интеллектуальный ассистент</div>
-        <div class="sugs">
-          <div class="sg" onclick="qs('Расскажи анекдот')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>Анекдот</div>
-          <div class="sg" onclick="qs('Погода в Москве')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>Погода</div>
-          <div class="sg" onclick="qs('Интересный факт')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Интересный факт</div>
-          <div class="sg" onclick="openImgModal()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>Создать изображение</div>
-          <div class="sg" onclick="qs('Текущий курс Bitcoin')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Курс криптовалюты</div>
-        </div>
+        <div class="wl-h" id="wlQuote">С чего начнём?</div>
+        <div class="sugs" id="wlSugs"></div>
+        <div class="sugs-data" style="display:none"><div class="sg-item" data-action="qs('Расскажи анекдот')" data-label="Анекдот">Анекдот</div><div class="sg-item" data-action="qs('Погода в Москве')" data-label="Погода">Погода</div><div class="sg-item" data-action="qs('Интересный факт')" data-label="Интересный факт">Интересный факт</div><div class="sg-item" data-action="openImgModal()" data-label="Изображение">Изображение</div><div class="sg-item" data-action="qs('Текущий курс Bitcoin')" data-label="Криптовалюта">Криптовалюта</div><div class="sg-item" data-action="qs('Главные новости сегодня')" data-label="Новости">Новости</div><div class="sg-item" data-action="qs('Напиши стихотворение')" data-label="Стихотворение">Стихотворение</div><div class="sg-item" data-action="qs('Придумай загадку')" data-label="Загадка">Загадка</div></div>
       </div>
     </div>
   </div>
@@ -468,6 +458,9 @@ textarea#inp::placeholder{color:var(--t3);}
         <span style="font-size:13px">Тариф</span>
         <span style="font-size:12px;color:var(--t2)" id="settingsTier">—</span>
       </div>
+      <div class="s-row" style="border:none;padding-top:10px">
+        <button onclick="closeSettings();openProModal()" style="width:100%;padding:9px;background:linear-gradient(90deg,var(--accent),#a78bfa);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">Управление подпиской</button>
+      </div>
     </div>
     <div style="display:flex;gap:7px;margin-top:4px">
       <button class="mbtn-o" style="flex:1" onclick="closeSettings()">Закрыть</button>
@@ -576,6 +569,7 @@ async function boot(){
   renderChatList();
   if(!curChatId) newChat();
   await loadProfile();
+  initWelcome();
   document.getElementById('inp').focus();
 }
 
@@ -667,7 +661,7 @@ async function loadProfile(){
   curStyle=r.persona||'neutral';
   styleLbl.textContent=PERSONAS[curStyle]?.[0]||'Нейтральный';
   updateStylePicker();
-  if(r.tier==='pro') proPill.style.display='none';}
+  proPill.style.display=r.tier==='pro'?'none':'block';}
   catch(e){if(e.status===401)doLogout();}
 }
 
@@ -778,7 +772,7 @@ function addMsg(role,text,time){
 }
 function addTyping(){
   const el=document.getElementById('msgs');const w=document.createElement('div');w.className='mw';
-  w.innerHTML=`<div class="msg bot"><div class="mb"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
+  w.innerHTML=`<div class="msg bot"><div class="mb"><div class="typing"><div class="typing-dot"></div></div></div></div>`;
   el.appendChild(w);el.scrollTop=el.scrollHeight;return w;
 }
 
@@ -788,6 +782,35 @@ function toggleDrop(id){const el=document.getElementById(id);const was=el.classL
 function closeDrop(id){document.getElementById(id).classList.remove('open');}
 document.addEventListener('click',e=>{if(!e.target.closest('.dw'))document.querySelectorAll('.drop.open').forEach(d=>d.classList.remove('open'));});
 
+const QUOTES=['С чего начнём?','Чем могу помочь?','Задай любой вопрос.','Что на уме?','Готов к работе.','Спрашивай — отвечу.','Давай разберёмся.'];
+function initWelcome(){
+  const q=document.getElementById('wlQuote');
+  if(q) q.textContent=QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  const sugs=document.getElementById('wlSugs');
+  if(!sugs)return;
+  const all=[...document.querySelectorAll('.sg-item')];
+  const shuffled=all.sort(()=>Math.random()-.5);
+  const pick=shuffled.slice(0,2);
+  const rest=shuffled.slice(2);
+  sugs.innerHTML='';
+  pick.forEach(item=>{
+    const d=document.createElement('div');d.className='sg';
+    d.textContent=item.dataset.label;
+    d.onclick=new Function(item.dataset.action);
+    sugs.appendChild(d);
+  });
+  const more=document.createElement('div');more.className='sg';more.textContent='Ещё...';
+  more.onclick=()=>{
+    sugs.innerHTML='';
+    shuffled.forEach(item=>{
+      const d=document.createElement('div');d.className='sg';
+      d.textContent=item.dataset.label;
+      d.onclick=new Function(item.dataset.action);
+      sugs.appendChild(d);
+    });
+  };
+  sugs.appendChild(more);
+}
 function buildStylePicker(){
   const dp=document.getElementById('styleDrop');
   let addedPro=false;
