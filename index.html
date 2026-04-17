@@ -840,8 +840,9 @@ async function sendWithStream(text,td,chat){
       <div class="thinking-header" onclick="toggleThinkContent()">
         <div class="thinking-spinner"></div>
         <span id="thinkStatus">Размышляю...</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:auto"><path d="m6 9 6 6 6-6"/></svg>
       </div>
-      <div class="thinking-content" id="thinkContent"></div>
+      <div class="thinking-content open" id="thinkContent"></div>
     </div>`:''}
     <div class="mb-bot stream-cursor" id="streamText"></div>
     <div class="mt">${t2()}</div>
@@ -874,38 +875,52 @@ async function sendWithStream(text,td,chat){
 
     const reader=resp.body.getReader();
     const dec=new TextDecoder();
-    let buf='';
+    let buf='';let done_flag=false;
 
     while(true){
       const {done,value}=await reader.read();
       if(done) break;
       buf+=dec.decode(value,{stream:true});
-      const lines=buf.split('\n\n');
-      buf=lines.pop()||'';
-      for(const line of lines){
-        if(!line.startsWith('event:')) continue;
-        const [evLine,...dataLines]=line.split('\n');
-        const event=evLine.replace('event:','').trim();
-        const dataStr=dataLines.find(l=>l.startsWith('data:'))?.slice(5)||'{}';
+      // Парсим все полные SSE блоки
+      const blocks=buf.split('\n\n');
+      buf=blocks.pop()||''; // последний может быть неполным
+      for(const block of blocks){
+        if(!block.trim()) continue;
+        // Извлекаем event и data из блока
+        let event='',dataStr='';
+        for(const line of block.split('\n')){
+          if(line.startsWith('event:')) event=line.slice(6).trim();
+          else if(line.startsWith('data:')) dataStr=line.slice(5).trim();
+        }
+        if(!event) continue;
         let data={};try{data=JSON.parse(dataStr);}catch{}
 
-        if(event==='thinking'&&data.chunk&&thinkContentEl){
-          thinkFull+=data.chunk;
-          thinkContentEl.textContent=thinkFull;
-          msgs.scrollTop=msgs.scrollHeight;
+        if(event==='thinking'){
+          if(data.chunk){
+            thinkFull+=data.chunk;
+            if(thinkContentEl){
+              thinkContentEl.textContent=thinkFull;
+              // Авто-открываем блок мышления
+              if(!thinkContentEl.classList.contains('open')) thinkContentEl.classList.add('open');
+            }
+            msgs.scrollTop=msgs.scrollHeight;
+          }
         }
-        if(event==='token'&&data.chunk){
-          fullReply+=data.chunk;
-          streamTextEl.innerHTML=renderMD(fullReply);
-          msgs.scrollTop=msgs.scrollHeight;
+        else if(event==='token'){
+          if(data.chunk){
+            fullReply+=data.chunk;
+            streamTextEl.innerHTML=renderMD(fullReply);
+            msgs.scrollTop=msgs.scrollHeight;
+          }
         }
-        if(event==='done'){
+        else if(event==='done'){
           if(data.reply) fullReply=data.reply;
-          if(data.thinking_content) thinkFull=data.thinking_content;
-          break;
+          if(data.thinking_content&&!thinkFull) thinkFull=data.thinking_content;
+          done_flag=true;break;
         }
-        if(event==='error'){fullReply='⚠️ '+( data.message||'Ошибка');break;}
+        else if(event==='error'){fullReply='⚠️ '+(data.message||'Ошибка');done_flag=true;break;}
       }
+      if(done_flag) break;
     }
   }catch(e){fullReply='⚠️ '+(e.message||'Ошибка');}
 
@@ -1025,4 +1040,3 @@ function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 </script>
 </body>
 </html>
-
